@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CarSim LLM parameter proposal",
+  "type": "object",
+  "required": ["diagnosis", "candidates"],
+  "properties": {
+    "diagnosis": {"type": "string", "minLength": 10},
+    "candidates": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "required": ["candidate_id", "rationale", "changes", "expected_effects", "risks"],
+        "properties": {
+          "candidate_id": {"type": "string", "pattern": "^[a-zA-Z0-9_-]+$"},
+          "rationale": {"type": "string"},
+          "changes": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 3,
+            "items": {
+              "type": "object",
+              "required": ["parameter", "value"],
+              "properties": {
+                "parameter": {"type": "string"},
+                "value": {"type": "number"}
+              },
+              "additionalProperties": false
+            }
+          },
+          "expected_effects": {"type": "array", "items": {"type": "string"}},
+          "risks": {"type": "array", "items": {"type": "string"}}
+        },
+        "additionalProperties": false
+      }
+    },
+    "stop_reason": {"type": ["string", "null"]}
+  },
+  "additionalProperties": false
+}
+

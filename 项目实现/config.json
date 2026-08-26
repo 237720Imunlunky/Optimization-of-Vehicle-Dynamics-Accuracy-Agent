@@ -1,0 +1,96 @@
+{
+  "formal_acceptance_threshold_pct": 80.0,
+  "historical_thresholds_pct": [80.0, 85.0],
+  "chart_axis": {
+    "minimum_pct": 80.0,
+    "maximum_pct": 100.0,
+    "ticks_pct": [80.0, 85.0, 90.0, 95.0, 100.0]
+  },
+  "longitudinal_weights": {
+    "acceleration": 0.5833,
+    "coasting": 0.4167
+  },
+  "metric_thresholds": {
+    "speed_r2_min": 0.90,
+    "speed_nrmse_max": 0.1,
+    "peak_ax_accuracy_min_pct": 90.0,
+    "coasting_distance_accuracy_min_pct": 85.0,
+    "target_time_accuracy_min_pct": 85.0
+  },
+  "agent": {
+    "agent_version": "0.2.0",
+    "optimization_target_pct": 90.0,
+    "maximum_iterations": 12,
+    "maximum_candidates_per_iteration": 3,
+    "maximum_parameter_changes_per_candidate": 3,
+    "minimum_improvement_pct": 0.15,
+    "stop_after_no_improvement_iterations": 3,
+    "dataset_splits": {
+      "zero_to_100": {
+        "calibration": [1, 2, 3, 4],
+        "validation": [5, 6],
+        "excluded": {}
+      },
+      "overtaking": {
+        "calibration": [1, 2, 3, 4],
+        "validation": [5, 6],
+        "excluded": {}
+      },
+      "coasting": {
+        "calibration": [1, 2, 4],
+        "validation": [5],
+        "excluded": {
+          "3": "原始CAN显示严格50->30窗口内制动踏板约3.08%时间处于按下状态，不属于纯滑行",
+          "6": "单位修正后最高有效车速约48.83 km/h，缺少严格50 km/h起点"
+        }
+      }
+    },
+    "coasting_test_condition": {
+      "window_kmh": [50.0, 30.0],
+      "drive_mode": "舒适模式",
+      "gear": "N挡（原始CAN实测）",
+      "accelerator_input": "0%",
+      "brake_input": "有效样本严格窗口内未踩制动踏板",
+      "regeneration": "关闭；PDCM_MotRegenTrqInD_Total实测为0 Nm",
+      "simulation_duration_s": 100.0,
+      "carsim_controls": {
+        "gear": {
+          "keyword": "MODE_TRANS_CONSTANT",
+          "value": "NGEARS",
+          "source": "原始CAN实测N挡"
+        },
+        "regeneration": {
+          "keyword": "OPT_REGEN_OFF_THRT",
+          "value": 0,
+          "source": "原始CAN实测松油门回收扭矩为0 Nm"
+        }
+      },
+      "unbound_controls": {
+        "drive_mode": {
+          "requested": "舒适模式",
+          "reason": "当前展开CarSim模板未发现可确认的驾驶模式关键字，禁止猜写"
+        }
+      },
+      "d_gear_reference": "用户说明D挡舒适模式平路回收减速度为0.1g；该条件不属于当前N挡滑行数据集，需另建工况",
+      "control_evidence": "输出/滑行工况审计/当前配置审计",
+      "policy_version": "strict_50_to_30_v4_n_gear_can_verified"
+    },
+    "hard_guards": {
+      "longitudinal_score_min_pct": 90.0,
+      "acceleration_score_min_pct": 90.0,
+      "coasting_score_min_pct": 90.0,
+      "solver_all_cases_must_pass": true
+    }
+  },
+  "signals": {
+    "speed_kmh": ["IPB_vehicleSpeed", "PDCM_DisplayVehicleSpeed", "IPB_VehicleSpeedREF"],
+    "accel_mps2": ["ACU_LgtA", "LgtA", "EPBM_CDPAx"],
+    "accel_pedal_pct": ["PDCM_AccelPedal_Status", "PDCM_AccelPedal_Virtual"],
+    "brake_pedal": ["PDCM_BrakePedal_Status", "ipb_brakePedalStatus"],
+    "steer_deg": ["SAS_sasSteeringAngle", "eps_sasSteeringAngle", "STF_1_SteerWheelAng"],
+    "wheel_speed_fl_kmh": ["IPB_wheelSpeedFL"],
+    "wheel_speed_fr_kmh": ["IPB_wheelSpeedFR"],
+    "wheel_speed_rl_kmh": ["IPB_wheelSpeedRL"],
+    "wheel_speed_rr_kmh": ["IPB_wheelSpeedRR"]
+  }
+}

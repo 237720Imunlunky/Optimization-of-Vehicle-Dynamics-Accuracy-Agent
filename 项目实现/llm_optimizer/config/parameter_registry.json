@@ -1,0 +1,104 @@
+{
+  "registry_version": "1.0",
+  "baseline_model": "当前配置模型 + RR_C_0.0065",
+  "parameter_source_notice": "电机和电池参数是实车Trace识别值，不是厂家标定值",
+  "parameters": {
+    "motor_low_speed_torque_scale": {
+      "label_zh": "低速电机扭矩倍率",
+      "unit": "ratio",
+      "baseline": 1.0,
+      "minimum": 0.9,
+      "maximum": 1.1,
+      "max_change_per_iteration": 0.03,
+      "precision": 4,
+      "model_binding": "两个MMOTOR_MAX_TABLE的0-6000 rpm区间",
+      "binding": {"type": "motor_table_region", "keywords": ["MMOTOR_MAX_TABLE"], "rpm_max": 6000.0},
+      "main_effects": ["zero_to_100.peak_ax", "zero_to_100.target_time"],
+      "risk": "过大会导致低速加速度尖峰和轮胎附着限制"
+    },
+    "motor_high_speed_power_scale": {
+      "label_zh": "高速恒功率段倍率",
+      "unit": "ratio",
+      "baseline": 1.0,
+      "minimum": 0.9,
+      "maximum": 1.1,
+      "max_change_per_iteration": 0.03,
+      "precision": 4,
+      "model_binding": "两个MMOTOR_MAX_TABLE的6000 rpm以上区间",
+      "binding": {"type": "motor_table_region", "keywords": ["MMOTOR_MAX_TABLE"], "rpm_min": 6000.0},
+      "main_effects": ["zero_to_100.speed_curve", "overtaking.speed_curve"],
+      "risk": "与动力功率上限和电池内阻强耦合"
+    },
+    "drive_power_limit_kw": {
+      "label_zh": "动力系统驱动功率上限",
+      "unit": "kW",
+      "baseline": 380.0,
+      "minimum": 340.0,
+      "maximum": 420.0,
+      "max_change_per_iteration": 15.0,
+      "precision": 2,
+      "model_binding": "PWR_HEV_DRV_MAX、PWR_EV_MODE、PWR_DRV_THROTTLE_COEFFICIENT同步修改",
+      "binding": {"type": "scalar_group", "keywords": ["PWR_HEV_DRV_MAX", "PWR_EV_MODE", "PWR_DRV_THROTTLE_COEFFICIENT"], "expected_count": 1},
+      "main_effects": ["zero_to_100.speed_curve", "overtaking.target_time"],
+      "risk": "三个功率字段必须保持一致"
+    },
+    "battery_resistance_relative_scale": {
+      "label_zh": "修正版电池内阻相对倍率",
+      "unit": "ratio",
+      "baseline": 1.0,
+      "minimum": 0.8,
+      "maximum": 1.2,
+      "max_change_per_iteration": 0.05,
+      "precision": 4,
+      "model_binding": "R_CHRG_BATTERY_CARPET和R_DIS_BATTERY_CARPET数值区同步缩放",
+      "binding": {"type": "carpet_scale", "keywords": ["R_CHRG_BATTERY_CARPET", "R_DIS_BATTERY_CARPET"]},
+      "main_effects": ["zero_to_100.speed_curve", "overtaking.speed_curve"],
+      "risk": "只能相对当前0.05倍修正版缩放，不能再按原示例值解释"
+    },
+    "rr_c": {
+      "label_zh": "四轮滚动阻力常数",
+      "unit": "ratio",
+      "baseline": 0.0065,
+      "minimum": 0.0055,
+      "maximum": 0.0075,
+      "max_change_per_iteration": 0.0003,
+      "precision": 6,
+      "model_binding": "四处RR_C同步修改",
+      "binding": {"type": "scalar_group", "keywords": ["RR_C"], "expected_count": 4},
+      "main_effects": ["coasting.distance", "coasting.target_time", "acceleration.speed_curve"],
+      "risk": "四轮必须一致，且会同时影响加速和滑行"
+    },
+    "vehicle_mass_kg": {
+      "label_zh": "整车簧载质量",
+      "unit": "kg",
+      "baseline": 2808.0,
+      "minimum": 2700.0,
+      "maximum": 2920.0,
+      "max_change_per_iteration": 25.0,
+      "precision": 1,
+      "model_binding": "M_SU",
+      "binding": {"type": "scalar_group", "keywords": ["M_SU"], "expected_count": 1},
+      "main_effects": ["zero_to_100.peak_ax", "coasting.speed_curve"],
+      "risk": "优先使用称重值；缺少称重证据时仅允许小步识别"
+    },
+    "aero_area_scale": {
+      "label_zh": "迎风面积相对倍率",
+      "unit": "ratio",
+      "baseline": 1.0,
+      "minimum": 0.9,
+      "maximum": 1.1,
+      "max_change_per_iteration": 0.03,
+      "precision": 4,
+      "model_binding": "AREA_AERO相对当前2.2 m2缩放",
+      "binding": {"type": "scalar_group", "keywords": ["AREA_AERO"], "expected_count": 1, "base_value": 2.2},
+      "main_effects": ["overtaking.speed_curve", "coasting.speed_curve"],
+      "risk": "面积与阻力系数耦合，当前只识别等效气动阻力"
+    }
+  },
+  "locked_parameters": {
+    "front_final_drive": {"value": 11.635, "reason": "已有项目参数表来源"},
+    "rear_final_drive": {"value": 11.842, "reason": "已有项目参数表来源"},
+    "control_trace": {"value": "real_vehicle_trace", "reason": "控制输入已闭环验收，禁止参与调参"},
+    "evaluation_formula": {"value": "formal_v1", "reason": "正式评价规则禁止由LLM修改"}
+  }
+}

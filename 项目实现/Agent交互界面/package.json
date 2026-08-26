@@ -1,0 +1,10 @@
+{
+  "name": "carsim-longitudinal-agent-ui",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "dependencies": {
+    "playwright-core": "1.55.0"
+  }
+}
+

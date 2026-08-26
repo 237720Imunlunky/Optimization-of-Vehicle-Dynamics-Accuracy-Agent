@@ -1,0 +1,30 @@
+# 本仓库只管理当前“实车数据参数一致性对比”项目的代码、配置模板和文档。
+
+# 原始试验数据和仿真输出体积较大，只保存在本机 F 盘。
+/实车数据/
+/项目实现/输出/
+
+# 真实 API 信息只允许本机使用，严禁提交到远程仓库。
+/项目实现/Agent交互界面/config/llm_api.local.json
+.env
+.env.*
+
+# Python、Node.js 和测试运行缓存。
+**/__pycache__/
+**/*.py[cod]
+**/.pytest_cache/
+**/node_modules/
+**/.coverage
+**/htmlcov/
+
+# 编辑器和操作系统临时文件。
+**/.vscode/
+**/.idea/
+**/Thumbs.db
+**/desktop.ini
+**/*.tmp
+**/*.log
+
+# CarSim 求解器产生的二进制结果不进入源码仓库。
+**/*.vsb
+**/*.erd
