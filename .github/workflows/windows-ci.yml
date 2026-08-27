@@ -23,7 +23,8 @@ jobs:
       - name: Install cantools
         run: python -m pip install cantools==43.0.0
       - run: python scripts/check_public_release.py
-      - run: python -m pytest -q
-        working-directory: 项目实现
-      - run: python -m llm_optimizer.run_agent --dry-run --output "输出/CI/dry_run"
-        working-directory: 项目实现
+      - run: python -m pytest -q "项目实现"
+      - name: Run demo dry run
+        run: |
+          $env:PYTHONPATH = Join-Path $PWD "项目实现"
+          python -m llm_optimizer.run_agent --dry-run --output "项目实现/输出/CI/dry_run"
