@@ -13,7 +13,12 @@ jobs:
         with:
           python-version: "3.14"
       - run: python -m pip install --upgrade pip
-      - run: python -m pip install -r "项目实现/部署包/requirements.txt"
+      - name: Install pytest
+        run: python -m pip install pytest==8.4.2
+      - name: Install python-can
+        run: python -m pip install python-can==4.6.1
+      - name: Install cantools
+        run: python -m pip install cantools==43.0.0
       - run: python scripts/check_public_release.py
       - run: python -m pytest -q
         working-directory: 项目实现
