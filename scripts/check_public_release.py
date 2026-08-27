@@ -4,10 +4,14 @@ from __future__ import annotations
 
 import re
 import subprocess
+import sys
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 FORBIDDEN_SUFFIXES = {".blf", ".dbc", ".vsb", ".erd", ".dll", ".exe", ".par"}
 REQUIRED_FILES = {
     "README.md", "LICENSE", "项目实现/部署包/install_agent.cmd",
