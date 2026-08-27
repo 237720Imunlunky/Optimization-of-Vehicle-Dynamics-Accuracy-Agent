@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import csv
 import json
 import shutil
@@ -11,25 +12,29 @@ from pathlib import Path
 from typing import Any
 
 from build_trace_control import read_trace, replace_throttle
-from evaluate_longitudinal import aggregate, compare_pair, find_speed_crossing, normalize_coasting_window, read_rows, resample_rows
+from evaluate_longitudinal import aggregate, find_speed_crossing, normalize_coasting_window, read_rows, resample_rows
+from condition_framework import enabled_conditions, evaluate_registered_condition
 from run_coast_simulation import build_par
 from run_formal_longitudinal_acceptance import copy_evidence, first_valid_speed, last_time, replace_single_scalar
 from run_parameter_sensitivity import convert_result, run_solver
 
 from .model_patcher import audit_parameter_bindings, build_candidate_template
-from .objective import should_accept_candidate, summarize_formal_result
+from .objective import should_accept_candidate
 from .parameter_space import load_agent_config
 from config_loader import load_project_config, state_config_sync_status
 from .state_store import record_evaluation, write_state
+from data_admission import latest_admission_manifest
+from runtime_paths import load_runtime_paths
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-BASELINE_TEMPLATE = PROJECT_ROOT / "输出" / "动力总成修正" / "当前配置模型" / "closed_loop_acceptance" / "actual_trace" / "Run_all.par"
+RUNTIME_PATHS = load_runtime_paths()
+BASELINE_TEMPLATE = RUNTIME_PATHS["model_template_path"]
 TRUTH_ROOT = PROJECT_ROOT / "输出" / "解码CSV_单位修正"
-FORMAL_RESULT = PROJECT_ROOT / "输出" / "正式联合基线" / "当前配置基线" / "formal_acceptance.json"
+FORMAL_RESULT = RUNTIME_PATHS["formal_result_path"]
 PROPOSAL_ROOT = PROJECT_ROOT / "输出" / "LLM参数优化Agent" / "manual_dry_run"
 DEFAULT_OUTPUT = PROJECT_ROOT / "输出" / "LLM参数优化Agent" / "manual_carsim_eval"
-DEFAULT_RUNTIME = Path("F:/Carsim/AgentRuntime/parameter_agent/llm_optimizer/manual_carsim_eval")
+DEFAULT_RUNTIME = RUNTIME_PATHS["runtime_root"] / "llm_optimizer" / "manual_carsim_eval"
 TRACE_STEP_S = 0.02
 
 
@@ -116,14 +121,42 @@ def run_acceleration_repeat(
     simulation = archive / "simulation.csv"
     convert_result(runtime, simulation)
     write_trace_csv(archive / "trace_control.csv", truth)
-    comparison = compare_pair(truth, simulation, role, rules)
+    comparison = evaluate_registered_condition(truth, simulation, role, rules)
     comparison.update({"dataset_split": split, "repeat_index": repeat_index})
     write_json(archive / "evaluation.json", {"solver": solver, "inputs": inputs, "comparison": comparison})
     return comparison
 
 
+def admission_records(role: str, required: bool = True) -> list[dict[str, Any]]:
+    """读取准入清单中的合格样本，完整优化不得绕过待复核或不合格数据。"""
+    manifest_path = latest_admission_manifest()
+    if manifest_path is None:
+        if required:
+            raise RuntimeError("尚未生成实车数据准入清单，请先运行 python data_admission.py run")
+        return []
+    manifest = read_json(manifest_path)
+    records = [
+        record for record in manifest.get("records", [])
+        if record.get("role") == role and record.get("status") == "accepted"
+    ]
+    return sorted(records, key=lambda item: int(item["repeat_index"]))
+
+
+def list_truth_records(role: str) -> list[dict[str, Any]]:
+    """返回合格实车CSV、真实试验编号和清单确定的数据集分组。"""
+    records = admission_records(role)
+    minimum = load_project_config()["data_admission"]["minimum_samples"]
+    counts = {split: sum(item.get("dataset_split") == split for item in records) for split in ("calibration", "validation")}
+    for split, count in counts.items():
+        if count < int(minimum[split]):
+            raise RuntimeError(f"{role}合格{split}样本不足：{count} < {minimum[split]}")
+    return [{**record, "path": Path(record["decoded_source"])} for record in records]
+
+
 def list_truth_files(role: str) -> list[Path]:
-    """按试验编号稳定排序读取六条实车数据。"""
+    """兼容旧调用方：启用准入后只返回清单中的合格文件。"""
+    if load_project_config()["data_admission"].get("enforce_for_full_optimization", True):
+        return [record["path"] for record in list_truth_records(role)]
     folder = (
         TRUTH_ROOT / "纵向动力学_加速试验" / "0-100全油门起步加速"
         if role == "zero_to_100"
@@ -132,8 +165,6 @@ def list_truth_files(role: str) -> list[Path]:
         else TRUTH_ROOT / "纵向动力学_滑行试验"
     )
     files = sorted(folder.glob("*.csv"))
-    if len(files) != 6:
-        raise ValueError(f"{role}实车文件应为6条，实际为{len(files)}")
     return files
 
 
@@ -183,10 +214,15 @@ def run_all_acceleration(
 ) -> list[dict[str, Any]]:
     """运行0-100与60-100共12条独立Trace仿真。"""
     results = []
-    for role in ("zero_to_100", "overtaking"):
-        files = list_truth_files(role)
-        for repeat_index, truth in enumerate(files, start=1):
-            split = split_name(repeat_index, config, role)
+    acceleration_roles = [
+        role for role, condition in enabled_conditions().items()
+        if condition["simulator_adapter"] == "trace_acceleration"
+    ]
+    for role in acceleration_roles:
+        records = list_truth_records(role)
+        for record in records:
+            repeat_index, truth = int(record["repeat_index"]), record["path"]
+            split = str(record["dataset_split"])
             role_output = output / split / role
             write_folder_readme(role_output, role, f"{split}数据中的{role}工况，按重复试验独立归档。")
             archive = role_output / f"repeat_{repeat_index:02d}"
@@ -219,20 +255,12 @@ def run_coasting(
 
     results = []
     sample_manifest = []
-    for repeat_index, truth in enumerate(list_truth_files("coasting"), start=1):
-        split = split_name(repeat_index, config, "coasting")
-        reason = excluded_reason("coasting", repeat_index, config)
-        if split == "excluded":
-            sample_manifest.append({
-                "repeat_index": repeat_index,
-                "source": str(truth),
-                "status": "excluded",
-                "reason": reason,
-            })
-            continue
+    for record in list_truth_records("coasting"):
+        repeat_index, truth = int(record["repeat_index"]), record["path"]
+        split = str(record["dataset_split"])
         if not has_strict_coasting_window(truth, window):
             raise ValueError(f"滑行第{repeat_index}次缺少严格{window[0]:g}->{window[1]:g} km/h完整窗口，禁止进入评价")
-        comparison = compare_pair(truth, simulation, "coasting", rules, window)
+        comparison = evaluate_registered_condition(truth, simulation, "coasting", rules)
         comparison.update({"dataset_split": split, "repeat_index": repeat_index})
         results.append(comparison)
         sample_manifest.append({
@@ -257,6 +285,23 @@ def run_coasting(
     return results
 
 
+def run_registered_conditions(
+    template: Path, output: Path, runtime: Path, rules: dict[str, Any], config: dict[str, Any],
+) -> list[dict[str, Any]]:
+    """按注册表执行全部已启用工况；新增适配器未实现时立即阻止优化。"""
+    adapters = {condition["simulator_adapter"] for condition in enabled_conditions().values()}
+    supported = {"trace_acceleration", "shared_coasting"}
+    unsupported = adapters - supported
+    if unsupported:
+        raise RuntimeError(f"存在尚未实现的CarSim工况适配器：{', '.join(sorted(unsupported))}")
+    results: list[dict[str, Any]] = []
+    if "trace_acceleration" in adapters:
+        results.extend(run_all_acceleration(template, output, runtime, rules, config))
+    if "shared_coasting" in adapters:
+        results.extend(run_coasting(template, output, runtime / "shared_coasting", rules, config))
+    return results
+
+
 def evaluation_summary(results: list[dict[str, Any]], project_config: dict[str, Any]) -> dict[str, Any]:
     """聚合指定数据分组，并统计仍未通过的单项数量。"""
     summary = aggregate(results, project_config)
@@ -265,7 +310,7 @@ def evaluation_summary(results: list[dict[str, Any]], project_config: dict[str, 
     )
     summary["comparison_count"] = len(results)
     metric_means = {}
-    for role in ("zero_to_100", "overtaking", "coasting"):
+    for role in enabled_conditions():
         selected = [item for item in results if item["role"] == role]
         if not selected:
             continue
@@ -281,15 +326,51 @@ def evaluation_summary(results: list[dict[str, Any]], project_config: dict[str, 
 def split_formal_baseline(formal: dict[str, Any], config: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
     """按与候选相同的重复编号拆分92.34%正式基线。"""
     groups = {"calibration": [], "validation": []}
-    for role in ("zero_to_100", "overtaking", "coasting"):
+    for role in enabled_conditions():
         selected = [item for item in formal["results"] if item["role"] == role]
         if len(selected) != 6:
             raise ValueError(f"正式基线中的{role}比较数量不是6")
+        admitted = {int(item["repeat_index"]): item for item in admission_records(role, required=False)}
         for repeat_index, item in enumerate(selected, start=1):
-            split = split_name(repeat_index, config, role)
+            if admitted and repeat_index not in admitted:
+                continue
+            split = str(admitted[repeat_index]["dataset_split"]) if admitted else split_name(repeat_index, config, role)
             if split != "excluded":
                 groups[split].append(item)
     return groups
+
+
+def formal_baseline_summaries(
+    formal: dict[str, Any], project_config: dict[str, Any], agent_config: dict[str, Any],
+) -> dict[str, dict[str, Any]]:
+    """按当前样本策略生成正式基线的标定、验证和完整数据摘要。"""
+    groups = split_formal_baseline(formal, agent_config)
+    normalized = {
+        split: [normalize_formal_metric_status(item, project_config) for item in items]
+        for split, items in groups.items()
+    }
+    return {
+        "calibration": evaluation_summary(normalized["calibration"], project_config),
+        "validation": evaluation_summary(normalized["validation"], project_config),
+        "all_data": evaluation_summary(normalized["calibration"] + normalized["validation"], project_config),
+    }
+
+
+def normalize_formal_metric_status(comparison: dict[str, Any], project_config: dict[str, Any]) -> dict[str, Any]:
+    """按当前config.json重算旧正式基线的单项通过状态，避免沿用历史布尔值。"""
+    normalized = copy.deepcopy(comparison)
+    thresholds = project_config["metric_thresholds"]
+    targets = {
+        "speed_r2": float(thresholds["speed_r2_min"]) * 100.0,
+        "speed_nrmse": (1.0 - float(thresholds["speed_nrmse_max"])) * 100.0,
+        "peak_ax": float(thresholds["peak_ax_accuracy_min_pct"]),
+        "coasting_distance": float(thresholds["coasting_distance_accuracy_min_pct"]),
+        "target_time": float(thresholds["target_time_accuracy_min_pct"]),
+    }
+    for metric_name, metric in normalized["metrics"].items():
+        metric["passed"] = float(metric["score_pct"]) >= targets[metric_name]
+    normalized["all_metrics_passed"] = all(metric["passed"] for metric in normalized["metrics"].values())
+    return normalized
 
 
 def current_best_summaries(
@@ -297,12 +378,12 @@ def current_best_summaries(
 ) -> dict[str, dict[str, Any]]:
     """读取当前最优点的三层评价；首轮使用正式基线，后续使用最近一次已接受候选。"""
     if state["best"]["source"] == "formal_baseline_current_config":
-        baseline_splits = split_formal_baseline(formal, agent_config)
-        return {
-            "calibration": evaluation_summary(baseline_splits["calibration"], project_config),
-            "validation": evaluation_summary(baseline_splits["validation"], project_config),
-            "all_data": summarize_formal_result(formal),
-        }
+        return formal_baseline_summaries(formal, project_config, agent_config)
+
+    # 新版状态把三层摘要直接保存在best中，详细history裁剪后仍可继续优化。
+    stored = state["best"].get("split_summaries", {})
+    if all(name in stored for name in ("calibration", "validation", "all_data")):
+        return {name: stored[name] for name in ("calibration", "validation", "all_data")}
 
     for entry in reversed(state.get("history", [])):
         if entry.get("status") != "accepted" or entry.get("candidate_id") != state["best"]["source"]:
@@ -416,8 +497,9 @@ def execute(
 
     for split in ("calibration", "validation"):
         write_folder_readme(output / split, f"{split}数据", "按重复试验分类保存候选的评价证据。")
-    results = run_all_acceleration(candidate_template, output, runtime, project_config["metric_thresholds"], agent_config)
-    results.extend(run_coasting(candidate_template, output, runtime / "shared_coasting", project_config["metric_thresholds"], agent_config))
+    results = run_registered_conditions(
+        candidate_template, output, runtime, project_config["metric_thresholds"], agent_config,
+    )
     decision = make_acceptance_decision(state, formal, results, project_config, agent_config)
     write_json(output / "acceptance_decision.json", decision)
 
@@ -431,7 +513,7 @@ def execute(
         "candidate_source": str(proposal_root),
         "baseline_template": str(BASELINE_TEMPLATE),
         "model_sha256": model_hash,
-        "carsim_run_count": 13,
+        "carsim_run_count": 1 + sum(condition["simulator_adapter"] == "trace_acceleration" for condition in enabled_conditions().values()),
         "real_comparison_count": len(results),
         "decision": decision["action"],
     })

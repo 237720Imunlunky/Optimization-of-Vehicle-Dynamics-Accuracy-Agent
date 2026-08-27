@@ -10,15 +10,18 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
+from runtime_paths import load_runtime_paths
+
 from config_loader import load_project_config
 from run_parameter_sensitivity import convert_result
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent
-DEFAULT_TEMPLATE = PROJECT_ROOT / "输出" / "动力总成修正" / "当前配置模型" / "closed_loop_acceptance" / "actual_trace" / "Run_all.par"
+RUNTIME_PATHS = load_runtime_paths()
+DEFAULT_TEMPLATE = RUNTIME_PATHS["model_template_path"]
 DEFAULT_ARCHIVE = PROJECT_ROOT / "输出" / "滑行工况" / "当前配置基线"
-DEFAULT_RUNTIME = Path("F:/Carsim/AgentRuntime/parameter_agent/formal_longitudinal/current_config/coasting")
-DEFAULT_CARSIM_ROOT = Path("F:/Carsim/Carsim2023/Carsim2023.2/install")
+DEFAULT_RUNTIME = RUNTIME_PATHS["runtime_root"] / "formal_longitudinal" / "current_config" / "coasting"
+DEFAULT_CARSIM_ROOT = RUNTIME_PATHS["carsim_root"]
 
 
 def build_par(

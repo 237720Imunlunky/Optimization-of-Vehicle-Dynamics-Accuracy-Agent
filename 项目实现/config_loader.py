@@ -11,6 +11,7 @@ from typing import Any
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 CONFIG_PATH = PROJECT_ROOT / "config.json"
+CONDITION_REGISTRY_PATH = PROJECT_ROOT / "conditions" / "condition_registry.json"
 
 
 def load_project_config() -> dict[str, Any]:
@@ -27,7 +28,10 @@ def load_project_config() -> dict[str, Any]:
 
 def validate_project_config(config: dict[str, Any]) -> None:
     """在启动阶段检查关键配置，避免前端和Agent静默使用默认值。"""
-    required = ("formal_acceptance_threshold_pct", "longitudinal_weights", "metric_thresholds", "agent", "chart_axis")
+    required = (
+        "formal_acceptance_threshold_pct", "longitudinal_weights", "metric_thresholds", "agent", "chart_axis",
+        "history_retention", "experience_policy", "data_admission",
+    )
     missing = [name for name in required if name not in config]
     if missing:
         raise ValueError(f"config.json缺少必填配置：{', '.join(missing)}")
@@ -68,6 +72,29 @@ def validate_project_config(config: dict[str, Any]) -> None:
     duration = float(condition.get("simulation_duration_s", 0))
     if duration <= 0:
         raise ValueError("滑行仿真时长simulation_duration_s必须大于0")
+    retention = config["history_retention"]
+    if int(retention.get("full_task_count", 0)) < 1 or int(retention.get("state_history_limit", 0)) < 1:
+        raise ValueError("历史保留数量和状态历史上限必须为正整数")
+    experience = config["experience_policy"]
+    if int(experience.get("prompt_character_budget", 0)) < 1000:
+        raise ValueError("经验提示词字符预算不得小于1000")
+    minimum = config["data_admission"].get("minimum_samples", {})
+    if int(minimum.get("calibration", 0)) < 1 or int(minimum.get("validation", 0)) < 1:
+        raise ValueError("标定集和验证集最小样本数必须为正整数")
+
+
+def load_condition_registry() -> dict[str, Any]:
+    """读取通用工况注册表，并检查启用工况的关键扩展接口。"""
+    try:
+        registry = json.loads(CONDITION_REGISTRY_PATH.read_text(encoding="utf-8"))
+    except FileNotFoundError as error:
+        raise RuntimeError(f"缺少工况注册表：{CONDITION_REGISTRY_PATH}") from error
+    required = {"domain", "enabled", "simulator_adapter", "evaluator", "metrics", "admission"}
+    for name, condition in registry.get("conditions", {}).items():
+        missing = required - set(condition)
+        if missing:
+            raise ValueError(f"工况{name}缺少字段：{', '.join(sorted(missing))}")
+    return registry
 
 
 def load_agent_config() -> dict[str, Any]:
@@ -87,6 +114,7 @@ def load_agent_config() -> dict[str, Any]:
 
 def evaluation_config_snapshot(config: dict[str, Any]) -> dict[str, Any]:
     """提取会改变评价结论或Agent接受判定的配置，排除界面展示配置。"""
+    registry = load_condition_registry()
     return {
         "formal_acceptance_threshold_pct": config["formal_acceptance_threshold_pct"],
         "longitudinal_weights": config["longitudinal_weights"],
@@ -94,6 +122,10 @@ def evaluation_config_snapshot(config: dict[str, Any]) -> dict[str, Any]:
         "dataset_splits": config["agent"]["dataset_splits"],
         "coasting_test_condition": config["agent"]["coasting_test_condition"],
         "hard_guards": config["agent"]["hard_guards"],
+        "condition_registry": registry,
+        "parameter_registry_sha256": hashlib.sha256(
+            (PROJECT_ROOT / "llm_optimizer" / "config" / "parameter_registry.json").read_bytes(),
+        ).hexdigest()[:16],
     }
 
 

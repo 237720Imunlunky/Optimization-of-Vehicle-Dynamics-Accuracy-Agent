@@ -1,0 +1,41 @@
+# 一键部署包
+
+## 普通用户
+
+1. 下载并解压整个 GitHub 仓库。
+2. 安装 Python 3.14 x64 并加入 PATH。
+3. 双击 `install_agent.cmd`。
+4. 双击 `verify_installation.cmd` 查看当前可用级别。
+5. 双击 `start_agent.cmd`，浏览器打开 `http://127.0.0.1:8765`。
+
+安装器优先使用 F 盘；电脑没有 F 盘时使用本机应用数据目录。CarSim Runtime 可以位于任意盘，
+但必须是纯英文 ASCII 绝对路径。
+
+## 自定义 CarSim 路径
+
+```powershell
+powershell -ExecutionPolicy Bypass -File ".\install.ps1" `
+  -InstallRoot "D:\VehicleDynamicsAgent" `
+  -RuntimeRoot "D:\VehicleDynamicsAgent\Runtime" `
+  -CarSimRoot "D:\Engineering\CarSim2023.2\install"
+```
+
+安装器按显式参数、`CARSIM_ROOT` 环境变量和常见盘符顺序发现 CarSim。未发现 CarSim 时仍可安装演示和干运行模式。
+
+## 分级环境
+
+- 演示和干运行：Windows 10/11 x64、Python 3.14 x64、现代浏览器；
+- 数据工作流：额外需要用户自己的 DBC/BLF；
+- 完整优化：额外需要合法授权 CarSim 2023.2、车辆模板、本车正式基线和 OpenAI 兼容 API。
+
+## 文件作用
+
+- `install_agent.cmd` / `install.ps1`：可迁移安装入口；
+- `install_f_drive.ps1`：兼容旧的 F 盘调用方式；
+- `start_agent.cmd` / `start_agent.ps1`：启动本地界面；
+- `verify_installation.cmd` / `verify_installation.ps1`：环境体检加干运行验收；
+- `health_check.py`：输出三级环境结论；
+- `requirements.txt`：固定 Python 依赖。
+
+体检和验收结果统一保存到 `项目实现/输出/部署体检/` 与 `项目实现/输出/部署验收/`。
+详细说明见仓库根目录 `docs/OPEN_SOURCE_DEPLOYMENT.md`。

@@ -5,11 +5,12 @@ from __future__ import annotations
 import csv
 import importlib.util
 from pathlib import Path
+from runtime_paths import load_runtime_paths
 
 
 def load_converter():
     """加载工作区已有 VS/VSB 转换器。"""
-    path = Path(__file__).resolve().parents[2] / "自动化闭环总控" / "03_数据转换" / "convert_carsim_vsb.py"
+    path = load_runtime_paths()["converter_path"]
     spec = importlib.util.spec_from_file_location("carsim_converter", path)
     if spec is None or spec.loader is None:
         raise ImportError("无法加载 Carsim 转换器")
@@ -23,7 +24,7 @@ def main() -> None:
     converter = load_converter()
     root = Path(__file__).resolve().parent
     run_dir = root / "输出" / "Trace控制输入" / "condition_01_trace_control" / "carsim_run"
-    source_dir = Path("F:/Carsim/AgentRuntime/parameter_agent/condition_01_trace_control/repeat_01")
+    source_dir = load_runtime_paths()["runtime_root"] / "condition_01_trace_control" / "repeat_01"
     group, names = converter.read_vs_metadata(source_dir / "result.vs")
     raw_rows = converter.read_vsb(source_dir / "result.vsb", len(names))
     signals = ["vxdot", "ax", "speed_kmh", "accel_mps2"]
@@ -41,4 +42,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

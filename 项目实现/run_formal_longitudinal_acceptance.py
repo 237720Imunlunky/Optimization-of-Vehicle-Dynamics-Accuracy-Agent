@@ -9,6 +9,7 @@ import re
 import shutil
 from datetime import datetime
 from pathlib import Path
+from runtime_paths import load_runtime_paths
 from typing import Any
 
 from build_trace_control import read_trace, replace_throttle
@@ -19,10 +20,10 @@ from run_coast_simulation import build_par
 from run_parameter_sensitivity import PROJECT_ROOT, convert_result, run_solver
 
 
-DEFAULT_TEMPLATE = PROJECT_ROOT / "输出" / "动力总成修正" / "当前配置模型" / "closed_loop_acceptance" / "actual_trace" / "Run_all.par"
+DEFAULT_TEMPLATE = load_runtime_paths()["model_template_path"]
 DEFAULT_TRUTH_ROOT = PROJECT_ROOT / "输出" / "解码CSV_单位修正"
 DEFAULT_OUTPUT = PROJECT_ROOT / "输出" / "正式联合基线" / "当前配置基线"
-DEFAULT_RUNTIME = Path("F:/Carsim/AgentRuntime/parameter_agent/formal_longitudinal/当前配置基线")
+DEFAULT_RUNTIME = load_runtime_paths()["runtime_root"] / "formal_longitudinal" / "当前配置基线"
 RR_C_BASELINE = 0.0065
 TRACE_STEP_S = 0.02
 EVIDENCE_FILES = (

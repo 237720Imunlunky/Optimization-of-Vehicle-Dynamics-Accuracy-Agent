@@ -8,6 +8,7 @@ import json
 import re
 import shutil
 from pathlib import Path
+from runtime_paths import load_runtime_paths
 from typing import Any
 
 from config_loader import load_project_config
@@ -17,7 +18,7 @@ from run_parameter_sensitivity import PROJECT_ROOT, convert_result, run_solver
 
 
 DEFAULT_OUTPUT = PROJECT_ROOT / "输出" / "滑行参数扫描" / "当前配置扫描"
-DEFAULT_RUNTIME = Path("F:/Carsim/AgentRuntime/parameter_agent/coast_parameter_scan/current_config")
+DEFAULT_RUNTIME = load_runtime_paths()["runtime_root"] / "coast_parameter_scan" / "current_config"
 DEFAULT_TRUTH = PROJECT_ROOT / "输出" / "解码CSV_单位修正" / "纵向动力学_滑行试验"
 RR_C_CANDIDATES = (0.0038, 0.0050, 0.0065, 0.0080, 0.0100, 0.0120)
 

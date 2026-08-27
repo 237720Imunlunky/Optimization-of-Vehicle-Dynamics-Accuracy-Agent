@@ -3,9 +3,18 @@
 # 原始试验数据和仿真输出体积较大，只保存在本机 F 盘。
 /实车数据/
 /项目实现/输出/
+/初版参数与配置/动力系统/*.par
 
 # 真实 API 信息只允许本机使用，严禁提交到远程仓库。
 /项目实现/Agent交互界面/config/llm_api.local.json
+/项目实现/config/runtime.local.json
+/项目实现/config/admission_reviews.local.json
+/项目实现/local_assets/data/*
+/项目实现/local_assets/vehicle_template/*
+/项目实现/local_assets/formal_baseline/*
+!/项目实现/local_assets/data/README.md
+!/项目实现/local_assets/vehicle_template/README.md
+!/项目实现/local_assets/formal_baseline/README.md
 .env
 .env.*
 
@@ -16,6 +25,7 @@
 **/node_modules/
 **/.coverage
 **/htmlcov/
+/项目实现/.venv/
 
 # 编辑器和操作系统临时文件。
 **/.vscode/

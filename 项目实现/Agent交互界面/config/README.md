@@ -1,6 +1,6 @@
 # API配置文件
 
-手动编辑`llm_api.local.json`，填写OpenAI兼容接口信息：
+首次安装会从`llm_api.example.json`生成被Git忽略的`llm_api.local.json`。手动填写OpenAI兼容接口信息：
 
 ```json
 {
@@ -17,4 +17,3 @@
 - 密钥只保存在本机该文件中；
 - 不要把此文件发送给其他人或提交到版本库；
 - 修改后在Agent界面点击“重新检查”。
-

@@ -16,13 +16,16 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
+from runtime_paths import load_runtime_paths
+
 
 PROJECT_ROOT = Path(__file__).resolve().parent
-DEFAULT_TEMPLATE = PROJECT_ROOT / "输出" / "Trace控制输入" / "condition_01_trace_control" / "Run_all.par"
+RUNTIME_PATHS = load_runtime_paths()
+DEFAULT_TEMPLATE = RUNTIME_PATHS["model_template_path"]
 DEFAULT_OUTPUT = PROJECT_ROOT / "输出" / "参数敏感性" / "iteration_trace_001"
-DEFAULT_RUNTIME = Path("F:/Carsim/AgentRuntime/parameter_agent/parameter_sensitivity/iteration_trace_001")
+DEFAULT_RUNTIME = RUNTIME_PATHS["runtime_root"] / "parameter_sensitivity" / "iteration_trace_001"
 REAL_ROOT = PROJECT_ROOT / "输出" / "解码CSV_单位修正" / "纵向动力学_加速试验" / "0-100全油门起步加速"
-SOLVER_ROOT = Path("F:/Carsim/Carsim2023/Carsim2023.2/install")
+SOLVER_ROOT = RUNTIME_PATHS["carsim_root"]
 
 # 只扫描已经确认能在 Trace Run_all.par 中定位的三个纵向参数。
 SCAN_PARAMETERS: tuple[dict[str, Any], ...] = (
@@ -41,7 +44,7 @@ SCAN_PARAMETERS: tuple[dict[str, Any], ...] = (
 
 def load_converter():
     """加载项目已有的 Carsim VS/VSB 转换器，避免重复实现二进制解析。"""
-    path = PROJECT_ROOT.parents[1] / "自动化闭环总控" / "03_数据转换" / "convert_carsim_vsb.py"
+    path = RUNTIME_PATHS["converter_path"]
     spec = importlib.util.spec_from_file_location("carsim_converter", path)
     if spec is None or spec.loader is None:
         raise ImportError(f"无法加载转换器：{path}")

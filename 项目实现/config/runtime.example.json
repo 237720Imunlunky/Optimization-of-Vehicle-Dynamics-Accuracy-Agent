@@ -1,0 +1,11 @@
+{
+  "carsim_root": "C:/path/to/CarSim2023.2/install",
+  "runtime_root": "C:/VehicleDynamicsAgent/Runtime",
+  "data_root": "local_assets/data",
+  "output_root": "输出",
+  "converter_path": "tools/convert_carsim_vsb.py",
+  "blf_dependencies": "tools",
+  "model_template_path": "local_assets/vehicle_template/Run_all.par",
+  "formal_result_path": "local_assets/formal_baseline/formal_acceptance.json",
+  "install_root": ".venv"
+}

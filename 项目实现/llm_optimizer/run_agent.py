@@ -8,8 +8,8 @@ from pathlib import Path
 from typing import Any
 
 from .llm_client import request_json
+from .candidate_executor import formal_baseline_summaries
 from .experience_memory import build_prompt_memory
-from .objective import summarize_formal_result
 from .parameter_space import baseline_parameters, load_agent_config, load_registry, validate_proposal
 from .prompt_builder import build_messages
 from .state_store import create_initial_state, record_proposal, write_state
@@ -17,7 +17,9 @@ from config_loader import stamp_state_config, state_config_sync_status
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_FORMAL_RESULT = PROJECT_ROOT / "输出" / "正式联合基线" / "当前配置基线" / "formal_acceptance.json"
+from runtime_paths import load_runtime_paths
+
+DEFAULT_FORMAL_RESULT = load_runtime_paths()["formal_result_path"]
 DEFAULT_OUTPUT = PROJECT_ROOT / "输出" / "LLM参数优化Agent" / "manual_dry_run"
 
 
@@ -56,7 +58,8 @@ def run(formal_result: Path, output: Path, use_mock: bool, state_path: Path | No
     config = load_agent_config()
     if state_path is None:
         parameters = baseline_parameters(registry)
-        summary = summarize_formal_result(formal)
+        # 首次运行也必须应用config.json中的样本排除规则，保持64项评价口径一致。
+        summary = formal_baseline_summaries(formal, config, config)["all_data"]
         state = create_initial_state(parameters, summary)
     else:
         state = json.loads(state_path.read_text(encoding="utf-8"))
@@ -70,14 +73,22 @@ def run(formal_result: Path, output: Path, use_mock: bool, state_path: Path | No
         summary = state["best"]["summary"]
     state = stamp_state_config(state, config)
     # 只向LLM发送压缩经验，既能利用前几轮结果，也避免完整历史导致上下文失控。
-    prompt_memory = build_prompt_memory(state.get("optimization_memory"))
+    prompt_memory = build_prompt_memory(state.get("optimization_memory"), config.get("experience_policy"))
     messages = build_messages(summary, parameters, registry, config, prompt_memory)
-    response = mock_response(parameters) if use_mock else request_json(messages, config)
+    # 请求前先落盘提示词；即使接口响应异常，失败目录也能用于复盘且不会包含API密钥。
+    (output / "llm_request_messages.json").write_text(
+        json.dumps(messages, ensure_ascii=False, indent=2), encoding="utf-8",
+    )
+    response = mock_response(parameters) if use_mock else request_json(
+        messages, config, diagnostic_path=output / "llm_response_attempts.json",
+    )
+    # 先保存规范化响应；即使后续候选数量或参数边界不合规，也能看到模型实际返回了什么。
+    (output / "llm_response.json").write_text(
+        json.dumps(response, ensure_ascii=False, indent=2), encoding="utf-8",
+    )
     validation = validate_proposal(response, parameters)
     state = record_proposal(state, validation)
 
-    (output / "llm_request_messages.json").write_text(json.dumps(messages, ensure_ascii=False, indent=2), encoding="utf-8")
-    (output / "llm_response.json").write_text(json.dumps(response, ensure_ascii=False, indent=2), encoding="utf-8")
     (output / "candidate_validation.json").write_text(json.dumps(validation, ensure_ascii=False, indent=2), encoding="utf-8")
     write_state(output / "agent_state.json", state)
     (output / "README.md").write_text(

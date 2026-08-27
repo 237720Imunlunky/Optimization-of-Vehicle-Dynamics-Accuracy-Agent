@@ -17,14 +17,40 @@
     "coasting_distance_accuracy_min_pct": 85.0,
     "target_time_accuracy_min_pct": 85.0
   },
+  "history_retention": {
+    "full_task_count": 3,
+    "state_history_limit": 60,
+    "automatic_cleanup_enabled": false,
+    "require_verified_summary": true
+  },
+  "experience_policy": {
+    "state_round_limit": 5,
+    "prompt_round_limit": 3,
+    "prompt_character_budget": 12000,
+    "maximum_fusion_sources": 4,
+    "maximum_rejected_directions": 6,
+    "cross_run_default": "inherit",
+    "fallback_after_memory_failures": 2
+  },
+  "data_admission": {
+    "enforce_for_full_optimization": true,
+    "copy_source_files": true,
+    "minimum_samples": {
+      "calibration": 2,
+      "validation": 1
+    }
+  },
   "agent": {
-    "agent_version": "0.2.0",
+    "agent_version": "0.3.0",
     "optimization_target_pct": 90.0,
-    "maximum_iterations": 12,
+    "maximum_iterations": 20,
     "maximum_candidates_per_iteration": 3,
     "maximum_parameter_changes_per_candidate": 3,
+    "llm_response_max_attempts": 3,
+    "llm_max_output_tokens": 8192,
+    "llm_thinking_mode": "disabled",
     "minimum_improvement_pct": 0.15,
-    "stop_after_no_improvement_iterations": 3,
+    "stop_after_no_improvement_iterations": 5,
     "dataset_splits": {
       "zero_to_100": {
         "calibration": [1, 2, 3, 4],

@@ -11,6 +11,7 @@ import json
 import re
 import shutil
 from pathlib import Path
+from runtime_paths import load_runtime_paths
 from typing import Any
 
 from diagnose_powertrain_chain import convert_all_channels, inject_diagnostic_outputs, summarize_channels
@@ -19,7 +20,7 @@ from run_parameter_sensitivity import DEFAULT_TEMPLATE, PROJECT_ROOT, convert_re
 
 
 DEFAULT_OUTPUT = PROJECT_ROOT / "输出" / "动力总成修正" / "当前配置模型"
-DEFAULT_RUNTIME = Path("F:/Carsim/AgentRuntime/parameter_agent/powertrain_fix/当前配置模型")
+DEFAULT_RUNTIME = load_runtime_paths()["runtime_root"] / "powertrain_fix" / "当前配置模型"
 
 # 主减速比来自项目参数表；电机扭矩和功率是实车 Trace 识别候选，不是厂家参数。
 FRONT_FINAL_DRIVE = 11.635

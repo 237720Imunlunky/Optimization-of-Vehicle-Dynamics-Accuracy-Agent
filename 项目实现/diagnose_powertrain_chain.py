@@ -8,13 +8,14 @@ import json
 import re
 import shutil
 from pathlib import Path
+from runtime_paths import load_runtime_paths
 
 from run_control_input_acceptance import prepare_case
 from run_parameter_sensitivity import DEFAULT_TEMPLATE, PROJECT_ROOT, load_converter, run_solver
 
 
 DEFAULT_OUTPUT = PROJECT_ROOT / "输出" / "动力链内部诊断" / "iteration_powertrain_chain_001"
-DEFAULT_RUNTIME = Path("F:/Carsim/AgentRuntime/parameter_agent/powertrain_chain/iteration_powertrain_chain_001")
+DEFAULT_RUNTIME = load_runtime_paths()["runtime_root"] / "powertrain_chain" / "iteration_powertrain_chain_001"
 
 # 这些是 CarSim 自带动力总成图表使用的合法 WRT 命令。
 WRT_COMMANDS = (

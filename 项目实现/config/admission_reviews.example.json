@@ -1,0 +1,11 @@
+{
+  "version": "1.0",
+  "records": {
+    "zero_to_100:1": {
+      "decision": "accepted",
+      "reviewer": "复核人姓名",
+      "basis": "已核对试验记录：D挡、舒适模式、平直干燥路面",
+      "reviewed_at": "2026-08-27T12:00:00"
+    }
+  }
+}

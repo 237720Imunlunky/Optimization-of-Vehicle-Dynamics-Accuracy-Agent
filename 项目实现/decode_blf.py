@@ -8,13 +8,15 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from runtime_paths import load_runtime_paths
+
 
 STANDARD_GRAVITY_MPS2 = 9.80665
 
 
 def load_dependencies(project_root: Path):
     """加载项目内置 CAN 解码依赖，避免污染系统 Python 环境。"""
-    tool_path = project_root / "_tools" / "blf_parser"
+    tool_path = load_runtime_paths()["blf_dependencies"]
     if str(tool_path) not in sys.path:
         sys.path.insert(0, str(tool_path))
     import can  # type: ignore

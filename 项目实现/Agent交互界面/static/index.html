@@ -32,6 +32,9 @@
         <button class="nav-item" type="button" data-view="history" data-testid="nav-history">
           <i data-lucide="history" aria-hidden="true"></i><span>迭代历史</span>
         </button>
+        <button class="nav-item" type="button" data-view="admission" data-testid="nav-admission">
+          <i data-lucide="file-check-2" aria-hidden="true"></i><span>数据准入</span>
+        </button>
         <button class="nav-item" type="button" data-view="settings" data-testid="nav-settings">
           <i data-lucide="settings" aria-hidden="true"></i><span>API 配置</span>
         </button>
@@ -50,6 +53,7 @@
           <h1 id="view-title">优化看板</h1>
         </div>
         <div class="topbar-actions">
+          <span class="runtime-mode" id="runtime-mode" hidden>演示模式</span>
           <span class="sync-time" id="sync-time">尚未同步</span>
           <button class="icon-button" id="refresh-button" type="button" title="刷新看板" aria-label="刷新看板" data-testid="refresh-button">
             <i data-lucide="refresh-cw" aria-hidden="true"></i>
@@ -60,7 +64,7 @@
       <section class="view active" data-view-panel="dashboard">
         <div class="metric-grid" aria-label="核心指标">
           <article class="metric-card primary-metric">
-            <div class="metric-head"><span>纵向综合精度</span><span class="metric-state success">已通过</span></div>
+            <div class="metric-head"><span>纵向综合精度</span><span class="metric-state success" id="overall-state">已通过</span></div>
             <div class="metric-value"><strong id="score-overall">--</strong><span>%</span></div>
             <div class="metric-foot"><span>正式基线 <b id="score-baseline">--%</b></span><span id="score-overall-delta">--</span></div>
           </article>
@@ -75,11 +79,11 @@
             <div class="progress-track amber"><span id="bar-coasting"></span></div>
           </article>
           <article class="metric-card">
-            <div class="metric-head"><span>未通过单项</span><i data-lucide="scan-search" aria-hidden="true"></i></div>
-            <div class="metric-value"><strong id="failed-count">--</strong><span>项</span></div>
-            <div class="metric-foot"><span id="baseline-failed-count">原基线 --项</span><span id="failed-delta">--</span></div>
+            <div class="metric-head"><span>逐样本未通过</span><i data-lucide="scan-search" aria-hidden="true"></i></div>
+            <div class="metric-value compact-value"><strong id="failed-count">--/--</strong><span>项</span></div>
+            <div class="metric-foot"><span id="baseline-failed-count">原基线 --/--</span><span id="failed-delta">--</span></div>
             <details class="failed-details" id="failed-details">
-              <summary>查看具体项目</summary>
+              <summary id="failed-detail-summary">查看失败记录</summary>
               <ul id="failed-detail-list"></ul>
             </details>
           </article>
@@ -100,7 +104,7 @@
               <div><dt>当前最优来源</dt><dd id="best-source">--</dd></div>
               <div><dt>迭代编号</dt><dd id="iteration-number">--</dd></div>
               <div><dt>连续无改善</dt><dd id="no-improvement">--</dd></div>
-              <div><dt>当前低速扭矩倍率</dt><dd id="torque-scale">--</dd></div>
+              <div><dt>当前参数变化</dt><dd id="parameter-change-summary" title="当前最优点相对正式基线的参数变化">--</dd></div>
               <div><dt>配置口径</dt><dd id="config-sync">--</dd></div>
             </dl>
             <button class="command-button" type="button" data-go-control data-testid="go-control">
@@ -110,7 +114,7 @@
         </div>
 
         <section class="panel metric-table-panel">
-          <div class="panel-header"><div><h2>单项指标</h2><p>按正式门槛持续收敛；“待优化”就是未通过单项</p></div><span class="table-count" id="metric-count">--</span></div>
+          <div class="panel-header"><div><h2>工况平均指标</h2><p>同工况样本求平均后的12项结果；逐样本失败记录请查看上方卡片</p></div><span class="table-count" id="metric-count">--</span></div>
           <div class="table-scroll">
             <table>
               <thead><tr><th>工况</th><th>指标</th><th>当前得分</th><th>目标</th><th>状态</th></tr></thead>
@@ -133,15 +137,30 @@
               </div>
             </fieldset>
 
+            <fieldset class="mode-fieldset">
+              <legend>经验模式</legend>
+              <div class="segmented-control" role="radiogroup" aria-label="经验模式">
+                <label><input type="radio" name="memory-mode" value="inherit" checked><span><i data-lucide="history" aria-hidden="true"></i>继承验证经验</span></label>
+                <label><input type="radio" name="memory-mode" value="fresh"><span><i data-lucide="rotate-ccw" aria-hidden="true"></i>全新优化</span></label>
+              </div>
+            </fieldset>
+
             <div class="run-checks">
               <div><span class="check-icon" id="check-api-icon"><i data-lucide="circle-dashed" aria-hidden="true"></i></span><div><strong>LLM API</strong><span id="control-api-status">检查中</span></div></div>
               <div><span class="check-icon" id="check-carsim-icon"><i data-lucide="circle-dashed" aria-hidden="true"></i></span><div><strong>CarSim 求解器</strong><span id="control-carsim-status">检查中</span></div></div>
+              <div><span class="check-icon" id="check-admission-icon"><i data-lucide="circle-dashed" aria-hidden="true"></i></span><div><strong>实车数据准入</strong><span id="control-admission-status">检查中</span></div></div>
               <div><span class="check-icon ready"><i data-lucide="check" aria-hidden="true"></i></span><div><strong>回退保护</strong><span>当前最优点永久保留</span></div></div>
             </div>
 
             <div class="action-row">
               <button class="primary-button" id="start-job-button" type="button" data-testid="start-job-button">
                 <i data-lucide="play" aria-hidden="true"></i><span>开始完整优化</span>
+              </button>
+              <button class="secondary-button job-control-button" id="pause-job-button" type="button" disabled title="当前步骤结束后安全暂停">
+                <i id="pause-job-icon" data-lucide="pause" aria-hidden="true"></i><span>暂停</span>
+              </button>
+              <button class="secondary-button danger-button job-control-button" id="stop-job-button" type="button" disabled title="当前步骤结束后停止并保留已完成结果">
+                <i data-lucide="square" aria-hidden="true"></i><span>安全停止</span>
               </button>
               <button class="secondary-button" id="open-config-shortcut" type="button">
                 <i data-lucide="file-pen-line" aria-hidden="true"></i><span>编辑 API 配置</span>
@@ -151,7 +170,26 @@
 
           <section class="log-surface">
             <div class="log-header"><div><span class="terminal-dot red"></span><span class="terminal-dot amber"></span><span class="terminal-dot green"></span></div><strong>任务日志</strong><span id="job-status-badge" class="job-badge">IDLE</span></div>
-            <pre id="job-log" aria-live="polite">等待启动任务...</pre>
+            <div class="job-overview-head">
+              <div><span class="job-kicker">优化过程</span><strong id="job-phase">等待启动</strong></div>
+              <span id="job-round-label" class="job-round-label">尚未开始</span>
+            </div>
+            <div class="job-progress-track" aria-label="优化进度"><span id="job-progress-fill"></span></div>
+            <div class="job-facts" aria-live="polite">
+              <div><span>当前轮次</span><strong id="job-round">--</strong></div>
+              <div><span>候选进度</span><strong id="job-candidates">--</strong></div>
+              <div><span>最新候选</span><strong id="job-last-candidate">--</strong></div>
+              <div><span>最新评分</span><strong id="job-last-score">--</strong></div>
+              <div><span>当前最优</span><strong id="job-best-score">--</strong></div>
+              <div><span>连续无提升</span><strong id="job-no-improvement">--</strong></div>
+            </div>
+            <div class="candidate-strip" id="job-candidate-strip" aria-live="polite"></div>
+            <div class="log-view-tabs" role="tablist" aria-label="任务日志视图">
+              <button class="log-view-tab active" type="button" data-log-view="overview" role="tab" aria-selected="true">过程摘要</button>
+              <button class="log-view-tab" type="button" data-log-view="raw" role="tab" aria-selected="false">原始日志</button>
+            </div>
+            <div id="job-overview" class="job-overview" aria-live="polite">启动任务后，这里会显示候选、评分和回退过程。</div>
+            <pre id="job-log" aria-live="polite" hidden>等待启动任务...</pre>
           </section>
         </div>
       </section>
@@ -175,6 +213,28 @@
             <table>
               <thead><tr><th>迭代目录</th><th>状态</th><th>最优精度</th><th>更新时间</th></tr></thead>
               <tbody id="history-table-body"></tbody>
+            </table>
+          </div>
+        </section>
+        <section class="panel full-panel history-storage-panel">
+          <div class="panel-header"><div><h2>历史空间管理</h2><p id="history-space-summary">正在统计任务级空间</p></div><button class="secondary-button compact-button" type="button" id="cleanup-history-button"><i data-lucide="trash-2" aria-hidden="true"></i><span>清理可释放历史</span></button></div>
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>完整任务</th><th>占用</th><th>经验摘要</th><th>保护状态</th><th>预计释放</th></tr></thead>
+              <tbody id="storage-table-body"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <section class="view" data-view-panel="admission">
+        <section class="panel full-panel">
+          <div class="panel-header"><div><h2>实车数据准入</h2><p>原始BLF保持不动，仅合格数据进入优化</p></div><button class="primary-button compact-button" type="button" id="run-admission-button"><i data-lucide="scan-search" aria-hidden="true"></i><span>生成新准入批次</span></button></div>
+          <div class="admission-summary" id="admission-summary">尚未读取准入状态</div>
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>工况</th><th>合格</th><th>不合格</th><th>待复核</th><th>标定/验证</th><th>状态</th></tr></thead>
+              <tbody id="admission-table-body"></tbody>
             </table>
           </div>
         </section>

@@ -1,0 +1,70 @@
+{
+  "version": "1.0.0",
+  "optimization_strategy": "staged_by_domain_with_global_regression",
+  "conditions": {
+    "zero_to_100": {
+      "label_zh": "0-100 km/h全油门起步加速",
+      "domain": "longitudinal",
+      "enabled": true,
+      "source_subdirectory": "纵向动力学_加速试验/0-100全油门起步加速",
+      "simulator_adapter": "trace_acceleration",
+      "evaluator": "longitudinal_acceleration",
+      "group": "acceleration",
+      "required_signals": ["speed_kmh", "accel_pedal_pct", "brake_pedal"],
+      "required_manual_evidence": ["gear", "drive_mode", "road_condition"],
+      "metrics": ["speed_r2", "speed_nrmse", "peak_ax", "target_time"],
+      "admission": {
+        "start_speed_range_kmh": [0.0, 3.0],
+        "target_speed_kmh": 100.0,
+        "target_speed_tolerance_kmh": 2.0,
+        "full_throttle_min_pct": 80.0,
+        "full_throttle_min_fraction": 0.9,
+        "brake_active_threshold": 0.0,
+        "brake_max_fraction": 0.01,
+        "steer_range_max_deg": 60.0
+      }
+    },
+    "overtaking": {
+      "label_zh": "60-100 km/h超越加速",
+      "domain": "longitudinal",
+      "enabled": true,
+      "source_subdirectory": "纵向动力学_加速试验/60-100超越加速",
+      "simulator_adapter": "trace_acceleration",
+      "evaluator": "longitudinal_acceleration",
+      "group": "acceleration",
+      "required_signals": ["speed_kmh", "accel_pedal_pct", "brake_pedal"],
+      "required_manual_evidence": ["gear", "drive_mode", "road_condition"],
+      "metrics": ["speed_r2", "speed_nrmse", "peak_ax", "target_time"],
+      "admission": {
+        "start_speed_range_kmh": [55.0, 66.0],
+        "target_speed_kmh": 100.0,
+        "target_speed_tolerance_kmh": 2.0,
+        "full_throttle_min_pct": 80.0,
+        "full_throttle_min_fraction": 0.9,
+        "brake_active_threshold": 0.0,
+        "brake_max_fraction": 0.01,
+        "steer_range_max_deg": 60.0
+      }
+    },
+    "coasting": {
+      "label_zh": "50-30 km/h N挡滑行",
+      "domain": "longitudinal",
+      "enabled": true,
+      "source_subdirectory": "纵向动力学_滑行试验",
+      "simulator_adapter": "shared_coasting",
+      "evaluator": "longitudinal_coasting",
+      "group": "coasting",
+      "required_signals": ["speed_kmh", "accel_pedal_pct", "brake_pedal"],
+      "required_manual_evidence": ["gear", "drive_mode", "road_condition", "regeneration"],
+      "metrics": ["speed_r2", "speed_nrmse", "coasting_distance", "target_time"],
+      "admission": {
+        "window_kmh": [50.0, 30.0],
+        "accelerator_max_pct": 0.5,
+        "accelerator_max_fraction": 0.01,
+        "brake_active_threshold": 0.0,
+        "brake_max_fraction": 0.01,
+        "steer_range_max_deg": 25.0
+      }
+    }
+  }
+}

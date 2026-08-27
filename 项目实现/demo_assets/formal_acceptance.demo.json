@@ -1,0 +1,702 @@
+{
+  "generated_at": "demo-baseline",
+  "model_baseline": {
+    "name": "公开演示基线",
+    "notice": "仅用于界面和干运行，不得用于真实车辆优化"
+  },
+  "evaluation_formula": "maneuver=0.4*time_domain+0.6*feature; longitudinal=0.5833*acceleration+0.4167*coasting",
+  "results": [
+    {
+      "truth": "demo://zero_to_100/repeat_01/truth.csv",
+      "simulation": "demo://zero_to_100/repeat_01/simulation.csv",
+      "role": "zero_to_100",
+      "metrics": {
+        "speed_r2": {
+          "value": 0.9594151250539006,
+          "score_pct": 95.94151250539007,
+          "passed": false
+        },
+        "speed_nrmse": {
+          "value": 0.06189993196991745,
+          "score_pct": 93.81000680300825,
+          "passed": false
+        },
+        "peak_ax": {
+          "truth": 6.79600845,
+          "sim": 5.679469638400612,
+          "score_pct": 83.57066769686861,
+          "passed": false
+        },
+        "target_time": {
+          "target_kmh": 100.0,
+          "truth_s": 4.863968253968254,
+          "sim_s": 5.370941184105216,
+          "score_pct": 89.57696876982392,
+          "passed": false
+        }
+      },
+      "actual_start_speed_kmh": 0.0,
+      "time_domain_score_pct": 94.87575965419916,
+      "feature_score_pct": 86.57381823334626,
+      "maneuver_score_pct": 89.89459480168742,
+      "feature_weights": "equal_within_maneuver",
+      "all_metrics_passed": false
+    },
+    {
+      "truth": "demo://zero_to_100/repeat_02/truth.csv",
+      "simulation": "demo://zero_to_100/repeat_02/simulation.csv",
+      "role": "zero_to_100",
+      "metrics": {
+        "speed_r2": {
+          "value": 0.9714626403936303,
+          "score_pct": 97.14626403936303,
+          "passed": false
+        },
+        "speed_nrmse": {
+          "value": 0.05182396265272173,
+          "score_pct": 94.81760373472783,
+          "passed": false
+        },
+        "peak_ax": {
+          "truth": 6.75678185,
+          "sim": 5.679469638400612,
+          "score_pct": 84.0558384817561,
+          "passed": false
+        },
+        "target_time": {
+          "target_kmh": 100.0,
+          "truth_s": 4.942592592592593,
+          "sim_s": 5.370941184105216,
+          "score_pct": 91.33352418820472,
+          "passed": true
+        }
+      },
+      "actual_start_speed_kmh": 0.0,
+      "time_domain_score_pct": 95.98193388704543,
+      "feature_score_pct": 87.6946813349804,
+      "maneuver_score_pct": 91.0095823558064,
+      "feature_weights": "equal_within_maneuver",
+      "all_metrics_passed": false
+    },
+    {
+      "truth": "demo://zero_to_100/repeat_03/truth.csv",
+      "simulation": "demo://zero_to_100/repeat_03/simulation.csv",
+      "role": "zero_to_100",
+      "metrics": {
+        "speed_r2": {
+          "value": 0.9637076551779759,
+          "score_pct": 96.37076551779758,
+          "passed": false
+        },
+        "speed_nrmse": {
+          "value": 0.05840247578589146,
+          "score_pct": 94.15975242141086,
+          "passed": false
+        },
+        "peak_ax": {
+          "truth": 6.776395149999998,
+          "sim": 5.679469638400612,
+          "score_pct": 83.81255096082485,
+          "passed": false
+        },
+        "target_time": {
+          "target_kmh": 100.0,
+          "truth_s": 4.8868253968253965,
+          "sim_s": 5.370941184105216,
+          "score_pct": 90.09345028790443,
+          "passed": true
+        }
+      },
+      "actual_start_speed_kmh": 0.0,
+      "time_domain_score_pct": 95.26525896960422,
+      "feature_score_pct": 86.95300062436465,
+      "maneuver_score_pct": 90.27790396246047,
+      "feature_weights": "equal_within_maneuver",
+      "all_metrics_passed": false
+    },
+    {
+      "truth": "demo://zero_to_100/repeat_04/truth.csv",
+      "simulation": "demo://zero_to_100/repeat_04/simulation.csv",
+      "role": "zero_to_100",
+      "metrics": {
+        "speed_r2": {
+          "value": 0.9651824941080782,
+          "score_pct": 96.51824941080783,
+          "passed": false
+        },
+        "speed_nrmse": {
+          "value": 0.056852539426081095,
+          "score_pct": 94.3147460573919,
+          "passed": false
+        },
+        "peak_ax": {
+          "truth": 6.71755525,
+          "sim": 5.679469638400612,
+          "score_pct": 84.54667549478825,
+          "passed": false
+        },
+        "target_time": {
+          "target_kmh": 100.0,
+          "truth_s": 4.929555555555555,
+          "sim_s": 5.370941184105216,
+          "score_pct": 91.04613745447652,
+          "passed": true
+        }
+      },
+      "actual_start_speed_kmh": 0.0,
+      "time_domain_score_pct": 95.41649773409986,
+      "feature_score_pct": 87.79640647463239,
+      "maneuver_score_pct": 90.84444297841938,
+      "feature_weights": "equal_within_maneuver",
+      "all_metrics_passed": false
+    },
+    {
+      "truth": "demo://zero_to_100/repeat_05/truth.csv",
+      "simulation": "demo://zero_to_100/repeat_05/simulation.csv",
+      "role": "zero_to_100",
+      "metrics": {
+        "speed_r2": {
+          "value": 0.9616903417413811,
+          "score_pct": 96.16903417413812,
+          "passed": false
+        },
+        "speed_nrmse": {
+          "value": 0.05970770091205057,
+          "score_pct": 94.02922990879495,
+          "passed": false
+        },
+        "peak_ax": {
+          "truth": 7.050981349999998,
+          "sim": 5.679469638400612,
+          "score_pct": 80.54864077041721,
+          "passed": false
+        },
+        "target_time": {
+          "target_kmh": 100.0,
+          "truth_s": 4.885925925925926,
+          "sim_s": 5.370941184105216,
+          "score_pct": 90.07321712337716,
+          "passed": true
+        }
+      },
+      "actual_start_speed_kmh": 0.0,
+      "time_domain_score_pct": 95.09913204146653,
+      "feature_score_pct": 85.31092894689718,
+      "maneuver_score_pct": 89.22621018472492,
+      "feature_weights": "equal_within_maneuver",
+      "all_metrics_passed": false
+    },
+    {
+      "truth": "demo://zero_to_100/repeat_06/truth.csv",
+      "simulation": "demo://zero_to_100/repeat_06/simulation.csv",
+      "role": "zero_to_100",
+      "metrics": {
+        "speed_r2": {
+          "value": 0.9655260670658465,
+          "score_pct": 96.55260670658465,
+          "passed": false
+        },
+        "speed_nrmse": {
+          "value": 0.05685144851813484,
+          "score_pct": 94.31485514818651,
+          "passed": false
+        },
+        "peak_ax": {
+          "truth": 6.7371685500000025,
+          "sim": 5.679469638400612,
+          "score_pct": 84.30054252391548,
+          "passed": false
+        },
+        "target_time": {
+          "target_kmh": 100.0,
+          "truth_s": 4.951296296296296,
+          "sim_s": 5.370941184105216,
+          "score_pct": 91.5245450343413,
+          "passed": true
+        }
+      },
+      "actual_start_speed_kmh": 0.0,
+      "time_domain_score_pct": 95.43373092738558,
+      "feature_score_pct": 87.91254377912838,
+      "maneuver_score_pct": 90.92101863843126,
+      "feature_weights": "equal_within_maneuver",
+      "all_metrics_passed": false
+    },
+    {
+      "truth": "demo://overtaking/repeat_07/truth.csv",
+      "simulation": "demo://overtaking/repeat_07/simulation.csv",
+      "role": "overtaking",
+      "metrics": {
+        "speed_r2": {
+          "value": 0.9957686612380356,
+          "score_pct": 99.57686612380357,
+          "passed": true
+        },
+        "speed_nrmse": {
+          "value": 0.020160932442840118,
+          "score_pct": 97.98390675571599,
+          "passed": true
+        },
+        "peak_ax": {
+          "truth": 5.982056499999999,
+          "sim": 5.759769015842053,
+          "score_pct": 96.28409587642736,
+          "passed": true
+        },
+        "target_time": {
+          "target_kmh": 100.0,
+          "truth_s": 2.3315555555555556,
+          "sim_s": 2.322195438491979,
+          "score_pct": 99.59854625632772,
+          "passed": true
+        }
+      },
+      "actual_start_speed_kmh": 60.91875,
+      "time_domain_score_pct": 98.78038643975978,
+      "feature_score_pct": 97.94132106637754,
+      "maneuver_score_pct": 98.27694721573044,
+      "feature_weights": "equal_within_maneuver",
+      "all_metrics_passed": true
+    },
+    {
+      "truth": "demo://overtaking/repeat_08/truth.csv",
+      "simulation": "demo://overtaking/repeat_08/simulation.csv",
+      "role": "overtaking",
+      "metrics": {
+        "speed_r2": {
+          "value": 0.9745074006535733,
+          "score_pct": 97.45074006535734,
+          "passed": false
+        },
+        "speed_nrmse": {
+          "value": 0.04691912360664004,
+          "score_pct": 95.308087639336,
+          "passed": true
+        },
+        "peak_ax": {
+          "truth": 6.24683605,
+          "sim": 5.641386244032063,
+          "score_pct": 90.30789665165076,
+          "passed": true
+        },
+        "target_time": {
+          "target_kmh": 100.0,
+          "truth_s": 2.0153968253968255,
+          "sim_s": 2.0943858622632514,
+          "score_pct": 96.08072038860767,
+          "passed": true
+        }
+      },
+      "actual_start_speed_kmh": 65.25,
+      "time_domain_score_pct": 96.37941385234666,
+      "feature_score_pct": 93.19430852012923,
+      "maneuver_score_pct": 94.4683506530162,
+      "feature_weights": "equal_within_maneuver",
+      "all_metrics_passed": false
+    },
+    {
+      "truth": "demo://overtaking/repeat_09/truth.csv",
+      "simulation": "demo://overtaking/repeat_09/simulation.csv",
+      "role": "overtaking",
+      "metrics": {
+        "speed_r2": {
+          "value": 0.9428957221811902,
+          "score_pct": 94.28957221811902,
+          "passed": false
+        },
+        "speed_nrmse": {
+          "value": 0.08118817534920553,
+          "score_pct": 91.88118246507945,
+          "passed": false
+        },
+        "peak_ax": {
+          "truth": 5.991863150000002,
+          "sim": 5.695512559678804,
+          "score_pct": 95.05411617551381,
+          "passed": true
+        },
+        "target_time": {
+          "target_kmh": 100.0,
+          "truth_s": 3.2596296296296297,
+          "sim_s": 3.07762589301272,
+          "score_pct": 94.41642894141967,
+          "passed": true
+        }
+      },
+      "actual_start_speed_kmh": 60.1875,
+      "time_domain_score_pct": 93.08537734159924,
+      "feature_score_pct": 94.73527255846673,
+      "maneuver_score_pct": 94.07531447171974,
+      "feature_weights": "equal_within_maneuver",
+      "all_metrics_passed": false
+    },
+    {
+      "truth": "demo://overtaking/repeat_10/truth.csv",
+      "simulation": "demo://overtaking/repeat_10/simulation.csv",
+      "role": "overtaking",
+      "metrics": {
+        "speed_r2": {
+          "value": 0.9934764242116163,
+          "score_pct": 99.34764242116162,
+          "passed": true
+        },
+        "speed_nrmse": {
+          "value": 0.024268954574869255,
+          "score_pct": 97.57310454251308,
+          "passed": true
+        },
+        "peak_ax": {
+          "truth": 5.93302325,
+          "sim": 5.738364325629348,
+          "score_pct": 96.71906014575872,
+          "passed": true
+        },
+        "target_time": {
+          "target_kmh": 100.0,
+          "truth_s": 2.2135555555555553,
+          "sim_s": 2.2448675958188153,
+          "score_pct": 98.58544140965093,
+          "passed": true
+        }
+      },
+      "actual_start_speed_kmh": 62.268750000000004,
+      "time_domain_score_pct": 98.46037348183735,
+      "feature_score_pct": 97.65225077770482,
+      "maneuver_score_pct": 97.97549985935783,
+      "feature_weights": "equal_within_maneuver",
+      "all_metrics_passed": true
+    },
+    {
+      "truth": "demo://overtaking/repeat_11/truth.csv",
+      "simulation": "demo://overtaking/repeat_11/simulation.csv",
+      "role": "overtaking",
+      "metrics": {
+        "speed_r2": {
+          "value": 0.9644921326148286,
+          "score_pct": 96.44921326148285,
+          "passed": false
+        },
+        "speed_nrmse": {
+          "value": 0.05523154529292677,
+          "score_pct": 94.47684547070733,
+          "passed": false
+        },
+        "peak_ax": {
+          "truth": 6.021283099999999,
+          "sim": 5.669996473524321,
+          "score_pct": 94.16591745245,
+          "passed": true
+        },
+        "target_time": {
+          "target_kmh": 100.0,
+          "truth_s": 2.0155555555555558,
+          "sim_s": 2.129305522939305,
+          "score_pct": 94.35639632605432,
+          "passed": true
+        }
+      },
+      "actual_start_speed_kmh": 64.51875,
+      "time_domain_score_pct": 95.4630293660951,
+      "feature_score_pct": 94.26115688925216,
+      "maneuver_score_pct": 94.74190587998933,
+      "feature_weights": "equal_within_maneuver",
+      "all_metrics_passed": false
+    },
+    {
+      "truth": "demo://overtaking/repeat_12/truth.csv",
+      "simulation": "demo://overtaking/repeat_12/simulation.csv",
+      "role": "overtaking",
+      "metrics": {
+        "speed_r2": {
+          "value": 0.8203859576210297,
+          "score_pct": 82.03859576210297,
+          "passed": false
+        },
+        "speed_nrmse": {
+          "value": 0.13686587217119248,
+          "score_pct": 86.31341278288075,
+          "passed": false
+        },
+        "peak_ax": {
+          "truth": 5.864376699999998,
+          "sim": 5.545298258463589,
+          "score_pct": 94.55903912965876,
+          "passed": true
+        },
+        "target_time": {
+          "target_kmh": 100.0,
+          "truth_s": 4.616825396825397,
+          "sim_s": 4.2710169015908654,
+          "score_pct": 92.50982080733841,
+          "passed": true
+        }
+      },
+      "actual_start_speed_kmh": 60.75,
+      "time_domain_score_pct": 84.17600427249187,
+      "feature_score_pct": 93.53442996849859,
+      "maneuver_score_pct": 89.79105969009589,
+      "feature_weights": "equal_within_maneuver",
+      "all_metrics_passed": false
+    },
+    {
+      "truth": "demo://coasting/repeat_13/truth.csv",
+      "simulation": "demo://coasting/repeat_13/simulation.csv",
+      "role": "coasting",
+      "metrics": {
+        "speed_r2": {
+          "value": 0.9359335396970495,
+          "score_pct": 93.59335396970495,
+          "passed": false
+        },
+        "speed_nrmse": {
+          "value": 0.06810381126122092,
+          "score_pct": 93.1896188738779,
+          "passed": false
+        },
+        "coasting_distance": {
+          "truth_m": 669.0400790895062,
+          "sim_m": 698.5747550046378,
+          "score_pct": 95.58551470409287,
+          "passed": true
+        },
+        "target_time": {
+          "target_kmh": 30.0,
+          "truth_s": 62.445555555555565,
+          "sim_s": 63.476173372940856,
+          "score_pct": 98.34957378757181,
+          "passed": true
+        }
+      },
+      "actual_start_speed_kmh": 50.0,
+      "time_domain_score_pct": 93.39148642179143,
+      "feature_score_pct": 96.96754424583234,
+      "maneuver_score_pct": 95.53712111621599,
+      "feature_weights": "equal_within_maneuver",
+      "all_metrics_passed": false
+    },
+    {
+      "truth": "demo://coasting/repeat_14/truth.csv",
+      "simulation": "demo://coasting/repeat_14/simulation.csv",
+      "role": "coasting",
+      "metrics": {
+        "speed_r2": {
+          "value": 0.9824636058889181,
+          "score_pct": 98.24636058889182,
+          "passed": true
+        },
+        "speed_nrmse": {
+          "value": 0.03868796490643767,
+          "score_pct": 96.13120350935624,
+          "passed": true
+        },
+        "coasting_distance": {
+          "truth_m": 773.3157040895062,
+          "sim_m": 698.5747550046378,
+          "score_pct": 90.33500177358125,
+          "passed": true
+        },
+        "target_time": {
+          "target_kmh": 30.0,
+          "truth_s": 72.48555555555556,
+          "sim_s": 63.476173372940856,
+          "score_pct": 87.57078963724078,
+          "passed": false
+        }
+      },
+      "actual_start_speed_kmh": 50.0,
+      "time_domain_score_pct": 97.18878204912403,
+      "feature_score_pct": 88.95289570541101,
+      "maneuver_score_pct": 92.24725024289623,
+      "feature_weights": "equal_within_maneuver",
+      "all_metrics_passed": false
+    },
+    {
+      "truth": "demo://coasting/repeat_15/truth.csv",
+      "simulation": "demo://coasting/repeat_15/simulation.csv",
+      "role": "coasting",
+      "metrics": {
+        "speed_r2": {
+          "value": 0.9369361740089198,
+          "score_pct": 93.69361740089198,
+          "passed": false
+        },
+        "speed_nrmse": {
+          "value": 0.058998267687531976,
+          "score_pct": 94.1001732312468,
+          "passed": false
+        },
+        "coasting_distance": {
+          "truth_m": 664.0363297325101,
+          "sim_m": 698.5747550046378,
+          "score_pct": 94.79871450918347,
+          "passed": true
+        },
+        "target_time": {
+          "target_kmh": 30.0,
+          "truth_s": 57.7148148148148,
+          "sim_s": 63.476173372940856,
+          "score_pct": 90.01753955788978,
+          "passed": true
+        }
+      },
+      "actual_start_speed_kmh": 50.0,
+      "time_domain_score_pct": 93.89689531606939,
+      "feature_score_pct": 92.40812703353663,
+      "maneuver_score_pct": 93.00363434654973,
+      "feature_weights": "equal_within_maneuver",
+      "all_metrics_passed": false
+    },
+    {
+      "truth": "demo://coasting/repeat_16/truth.csv",
+      "simulation": "demo://coasting/repeat_16/simulation.csv",
+      "role": "coasting",
+      "metrics": {
+        "speed_r2": {
+          "value": 0.9722930865663839,
+          "score_pct": 97.2293086566384,
+          "passed": false
+        },
+        "speed_nrmse": {
+          "value": 0.047569375810241996,
+          "score_pct": 95.2430624189758,
+          "passed": true
+        },
+        "coasting_distance": {
+          "truth_m": 776.8897665895063,
+          "sim_m": 698.5747550046378,
+          "score_pct": 89.91941779222218,
+          "passed": false
+        },
+        "target_time": {
+          "target_kmh": 30.0,
+          "truth_s": 73.42555555555556,
+          "sim_s": 63.476173372940856,
+          "score_pct": 86.44970118736553,
+          "passed": false
+        }
+      },
+      "actual_start_speed_kmh": 50.0,
+      "time_domain_score_pct": 96.2361855378071,
+      "feature_score_pct": 88.18455948979386,
+      "maneuver_score_pct": 91.40520990899915,
+      "feature_weights": "equal_within_maneuver",
+      "all_metrics_passed": false
+    },
+    {
+      "truth": "demo://coasting/repeat_17/truth.csv",
+      "simulation": "demo://coasting/repeat_17/simulation.csv",
+      "role": "coasting",
+      "metrics": {
+        "speed_r2": {
+          "value": 0.6946865895707335,
+          "score_pct": 69.46865895707334,
+          "passed": false
+        },
+        "speed_nrmse": {
+          "value": 0.13864837566306915,
+          "score_pct": 86.13516243369308,
+          "passed": false
+        },
+        "coasting_distance": {
+          "truth_m": 593.9616415895061,
+          "sim_m": 698.5747550046378,
+          "score_pct": 82.38722737462042,
+          "passed": false
+        },
+        "target_time": {
+          "target_kmh": 30.0,
+          "truth_s": 56.22555555555555,
+          "sim_s": 63.476173372940856,
+          "score_pct": 87.10440875907204,
+          "passed": false
+        }
+      },
+      "actual_start_speed_kmh": 50.0,
+      "time_domain_score_pct": 77.80191069538321,
+      "feature_score_pct": 84.74581806684623,
+      "maneuver_score_pct": 81.96825511826103,
+      "feature_weights": "equal_within_maneuver",
+      "all_metrics_passed": false
+    },
+    {
+      "truth": "demo://coasting/repeat_18/truth.csv",
+      "simulation": "demo://coasting/repeat_18/simulation.csv",
+      "role": "coasting",
+      "metrics": {
+        "speed_r2": {
+          "value": 0.9555055216453163,
+          "score_pct": 95.55055216453164,
+          "passed": false
+        },
+        "speed_nrmse": {
+          "value": 0.05746618736020087,
+          "score_pct": 94.2533812639799,
+          "passed": false
+        },
+        "coasting_distance": {
+          "truth_m": 698.2382465277778,
+          "sim_m": 698.5747550046378,
+          "score_pct": 99.95180606640594,
+          "passed": true
+        },
+        "target_time": {
+          "target_kmh": 30.0,
+          "truth_s": 64.51666666666668,
+          "sim_s": 63.476173372940856,
+          "score_pct": 98.38724883431802,
+          "passed": true
+        }
+      },
+      "actual_start_speed_kmh": 48.825,
+      "time_domain_score_pct": 94.90196671425576,
+      "feature_score_pct": 99.16952745036198,
+      "maneuver_score_pct": 97.4625031559195,
+      "feature_weights": "equal_within_maneuver",
+      "all_metrics_passed": false
+    }
+  ],
+  "mean_metric_scores_pct": {
+    "zero_to_100": {
+      "peak_ax": 83.47248598809507,
+      "speed_nrmse": 94.2410323455867,
+      "speed_r2": 96.44973872568022,
+      "target_time": 90.60797380968802
+    },
+    "overtaking": {
+      "peak_ax": 94.51502090524325,
+      "speed_nrmse": 93.92275660937209,
+      "speed_r2": 94.85877164200457,
+      "target_time": 95.92455902156645
+    },
+    "coasting": {
+      "coasting_distance": 92.16294703668434,
+      "speed_nrmse": 93.17543362185495,
+      "speed_r2": 91.29697528962203,
+      "target_time": 91.31321029390966
+    }
+  },
+  "summary": {
+    "group_scores_pct": {
+      "acceleration": 92.62523589095328,
+      "coasting": 91.93732898147361
+    },
+    "weights": {
+      "acceleration": 0.5833,
+      "coasting": 0.4167
+    },
+    "longitudinal_score_pct": 92.33858508177312,
+    "data_complete": true,
+    "formal_acceptance_threshold_pct": 80.0,
+    "formal_passed": true,
+    "pass_80_pct": true,
+    "pass_85_pct": true
+  },
+  "overtaking_actual_start_speeds_kmh": [
+    60.91875,
+    65.25,
+    60.1875,
+    62.268750000000004,
+    64.51875,
+    60.75
+  ]
+}

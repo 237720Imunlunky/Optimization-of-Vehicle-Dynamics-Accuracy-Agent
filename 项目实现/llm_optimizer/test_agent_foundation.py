@@ -1,18 +1,127 @@
 """LLM参数优化Agent基础安全机制测试。"""
 
+import json
+
+from . import llm_client
 from .objective import should_accept_candidate
 from .parameter_space import baseline_parameters, load_agent_config, load_registry, validate_candidate, validate_proposal
 from .candidate_executor import current_best_summaries, excluded_reason, split_name
 from .model_patcher import apply_parameter_set, audit_parameter_bindings
 from .state_store import create_initial_state, record_evaluation, record_proposal
 from .run_agent import mock_response
-from .llm_client import build_endpoint
+from .llm_client import build_endpoint, extract_assistant_text, normalize_proposal_fields, parse_json_object
 
 
 def test_build_endpoint_accepts_base_or_full_path() -> None:
     """API地址可填写根地址，也可填写完整chat/completions地址。"""
     assert build_endpoint("https://api.example.com/v1") == "https://api.example.com/v1/chat/completions"
     assert build_endpoint("https://api.example.com/v1/chat/completions") == "https://api.example.com/v1/chat/completions"
+
+
+def test_llm_json_parser_accepts_markdown_code_fence() -> None:
+    """模型偶发增加Markdown代码块时，仍应提取完整候选JSON。"""
+    content = '结果如下：\n```json\n{"diagnosis":"测试","candidates":[],"stop_reason":null}\n```'
+    parsed = parse_json_object(content)
+    assert parsed["diagnosis"] == "测试"
+    assert parsed["candidates"] == []
+
+
+def test_llm_json_parser_prefers_candidate_protocol_object() -> None:
+    """说明文字含小JSON示例时，应优先读取真正的候选协议对象。"""
+    content = '格式例子：{"parameter":"rr_c"}\n最终：{"diagnosis":"正式结果","candidates":[]}'
+    parsed = parse_json_object(content)
+    assert parsed["diagnosis"] == "正式结果"
+
+
+def test_extract_assistant_text_accepts_segmented_content() -> None:
+    """OpenAI兼容接口返回分段content时，应正确拼接文本。"""
+    payload = {
+        "choices": [{
+            "finish_reason": "stop",
+            "message": {"content": [{"type": "text", "text": '{"candidates":[]}' }]},
+        }],
+    }
+    content, finish_reason = extract_assistant_text(payload)
+    assert content == '{"candidates":[]}'
+    assert finish_reason == "stop"
+
+
+def test_extract_assistant_text_recovers_reasoning_json_when_content_empty() -> None:
+    """部分推理模型把最终JSON放错字段时，允许从reasoning_content恢复。"""
+    payload = {
+        "choices": [{
+            "finish_reason": "stop",
+            "message": {
+                "content": "",
+                "reasoning_content": '{"diagnosis":"备用字段恢复","candidates":[{"candidate_id":"C1"}]}',
+            },
+        }],
+    }
+    content, _ = extract_assistant_text(payload)
+    assert parse_json_object(content)["candidates"][0]["candidate_id"] == "C1"
+
+
+def test_normalize_proposal_fields_accepts_common_aliases() -> None:
+    """模型使用summary和proposals别名时，应规范化后再进入严格安全校验。"""
+    normalized = normalize_proposal_fields({"summary": "候选诊断", "proposals": [{"candidate_id": "C1"}]})
+    assert normalized["diagnosis"] == "候选诊断"
+    assert normalized["candidates"][0]["candidate_id"] == "C1"
+
+
+def test_request_json_retries_malformed_model_content(monkeypatch, tmp_path) -> None:
+    """首次正文不是JSON时，应自动再次请求并留下两次诊断记录。"""
+    responses = [
+        "这不是JSON",
+        '{"diagnosis":"重试成功","candidates":[{"candidate_id":"C1"}],"stop_reason":null}',
+    ]
+    call_count = 0
+
+    class FakeResponse:
+        """模拟urllib返回的OpenAI兼容响应。"""
+
+        def __init__(self, content: str) -> None:
+            self.content = content
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args) -> None:
+            return None
+
+        def read(self) -> bytes:
+            payload = {"choices": [{"finish_reason": "stop", "message": {"content": self.content}}]}
+            return json.dumps(payload, ensure_ascii=False).encode("utf-8")
+
+    def fake_urlopen(request, timeout):
+        """依次返回错误正文和正确JSON正文。"""
+        nonlocal call_count
+        assert timeout == 5.0
+        request_payload = json.loads(request.data.decode("utf-8"))
+        assert request_payload["thinking"] == {"type": "disabled"}
+        response = FakeResponse(responses[call_count])
+        call_count += 1
+        return response
+
+    monkeypatch.setenv("CARSIM_LLM_API_KEY", "test-key")
+    monkeypatch.setenv("CARSIM_LLM_BASE_URL", "https://api.example.com/v1")
+    monkeypatch.setenv("CARSIM_LLM_MODEL", "test-model")
+    monkeypatch.setattr(llm_client.urllib.request, "urlopen", fake_urlopen)
+    monkeypatch.setattr(llm_client.time, "sleep", lambda _seconds: None)
+    diagnostic_path = tmp_path / "llm_response_attempts.json"
+    result = llm_client.request_json(
+        [{"role": "user", "content": "生成候选"}],
+        {
+            "llm_response_max_attempts": 3,
+            "llm_max_output_tokens": 1024,
+            "llm_thinking_mode": "disabled",
+        },
+        timeout_s=5.0,
+        diagnostic_path=diagnostic_path,
+    )
+    diagnostics = json.loads(diagnostic_path.read_text(encoding="utf-8"))
+    assert result["diagnosis"] == "重试成功"
+    assert call_count == 2
+    assert [item["parsed"] for item in diagnostics] == [False, True]
 
 
 def test_parameter_mapping_changes_are_normalized() -> None:

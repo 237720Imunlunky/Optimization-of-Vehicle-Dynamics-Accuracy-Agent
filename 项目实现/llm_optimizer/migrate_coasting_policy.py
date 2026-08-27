@@ -14,7 +14,9 @@ from .parameter_space import load_agent_config
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 PROJECT_CONFIG = PROJECT_ROOT / "config.json"
-FORMAL_RESULT = PROJECT_ROOT / "输出" / "正式联合基线" / "当前配置基线" / "formal_acceptance.json"
+from runtime_paths import load_runtime_paths
+
+FORMAL_RESULT = load_runtime_paths()["formal_result_path"]
 
 
 def load_archived_results(evidence_root: Path, agent_config: dict[str, Any]) -> list[dict[str, Any]]:

@@ -7,10 +7,36 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from config_loader import load_project_config
+
+
+STATE_VERSION = "2.0"
+
+
+def compact_state_history(state: dict[str, Any], limit: int | None = None) -> dict[str, Any]:
+    """限制详细历史长度，并把被裁剪记录汇总为永久审计计数。"""
+    configured_limit = int(load_project_config()["history_retention"]["state_history_limit"])
+    maximum = configured_limit if limit is None else int(limit)
+    history = state.setdefault("history", [])
+    overflow = max(0, len(history) - maximum)
+    if overflow == 0:
+        return state
+    removed = history[:overflow]
+    archive = state.setdefault("history_archive", {"compacted_records": 0, "status_counts": {}})
+    archive["compacted_records"] = int(archive.get("compacted_records", 0)) + len(removed)
+    counts = archive.setdefault("status_counts", {})
+    for entry in removed:
+        status = str(entry.get("status", "unknown"))
+        counts[status] = int(counts.get(status, 0)) + 1
+    archive["last_compacted_at"] = datetime.now().isoformat(timespec="seconds")
+    state["history"] = history[overflow:]
+    return state
+
 
 def create_initial_state(parameters: dict[str, float], summary: dict[str, Any]) -> dict[str, Any]:
-    """以已验证的92.34%正式结果建立不可丢失的初始最优点。"""
+    """以当前配置的正式评价结果建立不可丢失的初始最优点。"""
     return {
+        "state_version": STATE_VERSION,
         "created_at": datetime.now().isoformat(timespec="seconds"),
         "current_iteration": 0,
         "no_improvement_iterations": 0,
@@ -28,7 +54,7 @@ def record_proposal(state: dict[str, Any], validation: dict[str, Any]) -> dict[s
         "accepted_candidate_ids": [item["candidate_id"] for item in validation["accepted"]],
         "rejected": validation["rejected"],
     })
-    return state
+    return compact_state_history(state)
 
 
 def record_evaluation(
@@ -49,11 +75,17 @@ def record_evaluation(
     }
     state["history"].append(entry)
     if decision["accepted"]:
-        state["best"] = {"source": candidate_id, "parameters": parameters, "summary": summary}
+        state["best"] = {
+            "source": candidate_id, "parameters": parameters, "summary": summary,
+            "split_summaries": {
+                name: decision["summaries"][name]["candidate"]
+                for name in ("calibration", "validation", "all_data")
+            },
+        }
         state["no_improvement_iterations"] = 0
     else:
         state["no_improvement_iterations"] += 1
-    return state
+    return compact_state_history(state)
 
 
 
@@ -61,5 +93,7 @@ def write_state(path: Path, state: dict[str, Any]) -> None:
     """原子替换状态文件，避免中断时留下半截JSON。"""
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_suffix(path.suffix + ".tmp")
+    state["state_version"] = STATE_VERSION
+    compact_state_history(state)
     temporary.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
     temporary.replace(path)

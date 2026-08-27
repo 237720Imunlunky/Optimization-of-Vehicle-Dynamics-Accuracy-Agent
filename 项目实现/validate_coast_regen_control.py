@@ -6,6 +6,7 @@ import argparse
 import json
 import shutil
 from pathlib import Path
+from runtime_paths import load_runtime_paths
 
 from evaluate_longitudinal import align_maneuver, read_rows, resample_rows, target_time
 from config_loader import load_project_config
@@ -15,7 +16,7 @@ from run_parameter_sensitivity import convert_result
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 DEFAULT_OUTPUT = PROJECT_ROOT / "输出" / "滑行回收控制验收" / "当前配置验收"
-DEFAULT_RUNTIME = Path("F:/Carsim/AgentRuntime/parameter_agent/coast_regen_acceptance/current_config")
+DEFAULT_RUNTIME = load_runtime_paths()["runtime_root"] / "coast_regen_acceptance" / "current_config"
 
 
 def simulation_summary(csv_path: Path, window_kmh: list[float]) -> dict[str, float | None]:

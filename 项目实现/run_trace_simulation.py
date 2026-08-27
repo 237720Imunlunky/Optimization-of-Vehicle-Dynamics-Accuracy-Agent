@@ -6,20 +6,22 @@ import json
 import shutil
 import subprocess
 from pathlib import Path
+from runtime_paths import load_runtime_paths
 
 
 def main() -> None:
     """复制 Trace 参数到 ASCII 运行目录并调用求解器。"""
     root = Path(__file__).resolve().parent
     source = root / "输出" / "Trace控制输入" / "condition_01_trace_control"
-    runtime = Path("F:/Carsim/AgentRuntime/parameter_agent/condition_01_trace_control/repeat_01")
+    paths = load_runtime_paths()
+    runtime = paths["runtime_root"] / "condition_01_trace_control" / "repeat_01"
     archive = source / "carsim_run"
     runtime.mkdir(parents=True, exist_ok=True)
     shutil.copy2(source / "Run_all.par", runtime / "Run_all.par")
-    animator = Path("F:/Carsim/AgentRuntime/parameter_agent/iteration_222/carsim2023_conditions_20260823_231653/condition_01_0_to_100_wot/repeat_01/animator.par")
+    animator = paths["runtime_root"] / "iteration_222" / "carsim2023_conditions_20260823_231653" / "condition_01_0_to_100_wot" / "repeat_01" / "animator.par"
     if animator.exists():
         shutil.copy2(animator, runtime / "animator.par")
-    carsim_root = Path("F:/Carsim/Carsim2023/Carsim2023.2/install")
+    carsim_root = paths["carsim_root"]
     prefix = runtime / "result"
     sim = runtime / "run.sim"
     sim.write_text("\n".join([
@@ -45,4 +47,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

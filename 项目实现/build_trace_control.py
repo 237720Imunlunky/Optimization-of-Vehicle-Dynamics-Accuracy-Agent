@@ -7,6 +7,7 @@ import csv
 import json
 import re
 from pathlib import Path
+from runtime_paths import load_runtime_paths
 
 
 def read_trace(path: Path, step_s: float = 0.1) -> list[tuple[float, float]]:
@@ -50,7 +51,7 @@ def main() -> None:
     parser.add_argument("--trace", type=Path, required=True)
     args = parser.parse_args()
     root = Path(__file__).resolve().parent
-    template = Path("F:/Carsim/AgentRuntime/parameter_agent/iteration_222/carsim2023_conditions_20260823_231653/condition_01_0_to_100_wot/repeat_01/Run_all.par")
+    template = load_runtime_paths()["model_template_path"]
     output = root / "输出" / "Trace控制输入" / "condition_01_trace_control"
     table = read_trace(args.trace.resolve())
     text = template.read_bytes().decode("utf-8")
@@ -70,4 +71,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

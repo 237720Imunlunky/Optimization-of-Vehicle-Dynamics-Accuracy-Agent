@@ -10,7 +10,9 @@ from typing import Any
 from run_parameter_sensitivity import PROJECT_ROOT
 
 
-FORMAL_RESULT = PROJECT_ROOT / "输出" / "正式联合基线" / "当前配置基线" / "formal_acceptance.json"
+from runtime_paths import load_runtime_paths
+
+FORMAL_RESULT = load_runtime_paths()["formal_result_path"]
 CONTROL_ROOT = PROJECT_ROOT / "输出" / "动力总成修正" / "当前配置模型" / "closed_loop_acceptance"
 OUTPUT_ROOT = PROJECT_ROOT / "输出" / "最终结论" / "当前配置结论"
 

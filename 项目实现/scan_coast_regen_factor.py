@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+from runtime_paths import load_runtime_paths
 
 from run_coast_simulation import DEFAULT_CARSIM_ROOT, build_par, build_simfile, run_one
 from run_parameter_sensitivity import convert_result
@@ -13,7 +14,7 @@ from validate_coast_regen_control import simulation_summary
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 DEFAULT_OUTPUT = PROJECT_ROOT / "输出" / "滑行回收控制验收" / "iteration_002_factor_scan"
-DEFAULT_RUNTIME = Path("F:/Carsim/AgentRuntime/parameter_agent/coast_regen_acceptance/iteration_002_factor_scan")
+DEFAULT_RUNTIME = load_runtime_paths()["runtime_root"] / "coast_regen_acceptance" / "iteration_002_factor_scan"
 
 
 def run_trial(template: Path, output: Path, runtime: Path, factor: float) -> dict:

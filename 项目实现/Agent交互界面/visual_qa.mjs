@@ -7,9 +7,10 @@ import path from "node:path";
 
 const UI_ROOT = path.dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = path.dirname(UI_ROOT);
-const OUTPUT_ROOT = path.join(PROJECT_ROOT, "输出", "Agent交互界面", "视觉验收", "iteration_005");
+const OUTPUT_ROOT = path.join(PROJECT_ROOT, "输出", "Agent交互界面", "视觉验收", process.env.AGENT_QA_OUTPUT || "controls_001");
 const EDGE_PATH = "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe";
-const TARGET_URL = "http://127.0.0.1:8765";
+const TARGET_URL = process.env.AGENT_QA_URL || "http://127.0.0.1:8765";
+const EXPECT_DEMO = process.env.AGENT_QA_EXPECT_DEMO === "1";
 let activeBrowser = null;
 
 function assert(condition, message) {
@@ -48,7 +49,7 @@ async function pageLayoutAudit(page, viewportName) {
 
 async function run() {
   await mkdir(path.dirname(OUTPUT_ROOT), { recursive: true });
-  await mkdir(OUTPUT_ROOT, { recursive: false });
+  await mkdir(OUTPUT_ROOT, { recursive: true });
   const browser = await chromium.launch({ executablePath: EDGE_PATH, headless: true });
   activeBrowser = browser;
   const consoleErrors = [];
@@ -59,12 +60,20 @@ async function run() {
   await page.goto(TARGET_URL, { waitUntil: "networkidle" });
   await page.waitForFunction(() => document.querySelector("#score-overall")?.textContent !== "--");
 
-  assert((await page.locator("#score-overall").textContent()) === "92.97", "综合精度未加载当前最优值");
-  assert((await page.locator("#side-api").textContent()) === "待配置", "API未配置状态显示错误");
+  const displayedScore = Number(await page.locator("#score-overall").textContent());
+  assert(Number.isFinite(displayedScore) && displayedScore >= 80, "综合精度未加载当前有效值");
+  assert((await page.locator("#runtime-mode").isVisible()) === EXPECT_DEMO, "演示模式标识与运行配置不一致");
+  assert((await page.locator("#parameter-change-summary").textContent()) !== "--", "动态参数变化摘要未加载");
+  assert((await page.locator("body").textContent()).includes("当前参数变化"), "状态卡仍缺少参数变化摘要");
+  assert(!(await page.locator("body").textContent()).includes("当前低速扭矩倍率"), "状态卡仍固定展示低速扭矩");
   const desktopAudit = await pageLayoutAudit(page, "桌面端");
   await page.screenshot({ path: path.join(OUTPUT_ROOT, "desktop_dashboard.png"), fullPage: true });
 
   await page.getByTestId("nav-control").click();
+  assert(await page.locator("#pause-job-button").isVisible(), "暂停按钮不可见");
+  assert(await page.locator("#stop-job-button").isVisible(), "安全停止按钮不可见");
+  assert(await page.locator('input[name="memory-mode"][value="inherit"]').isChecked(), "默认未继承验证经验");
+  await page.locator('input[name="memory-mode"][value="fresh"]').check({ force: true });
   await page.locator('input[name="run-mode"][value="dry_run"]').check({ force: true });
   assert(await page.getByTestId("start-job-button").isEnabled(), "干运行按钮不可用");
   await page.getByTestId("start-job-button").click();
@@ -73,9 +82,19 @@ async function run() {
   assert((await page.locator("#job-status-badge").textContent()) === "COMPLETED", "界面干运行未完成");
   await page.screenshot({ path: path.join(OUTPUT_ROOT, "desktop_control_completed.png"), fullPage: true });
 
+  await page.getByTestId("nav-admission").click();
+  const admissionText = await page.locator("#admission-summary").textContent();
+  if (!EXPECT_DEMO) assert(admissionText.includes("batch_"), "数据准入批次未展示");
+  assert(EXPECT_DEMO ? admissionText.includes("尚未生成") : (await page.locator("#admission-table-body").textContent()).includes("已就绪"), "数据准入状态与运行模式不一致");
+  await page.screenshot({ path: path.join(OUTPUT_ROOT, "desktop_data_admission.png"), fullPage: true });
+
+  await page.getByTestId("nav-history").click();
+  assert((await page.locator("#history-space-summary").textContent()).includes("完整保留最近 3 次"), "历史保留策略未展示");
+  await page.screenshot({ path: path.join(OUTPUT_ROOT, "desktop_history_storage.png"), fullPage: true });
+
   await page.getByTestId("nav-settings").click();
   const configPath = await page.locator("#config-path").textContent();
-  assert(configPath.includes("llm_api.local.json"), "API手动配置路径未展示");
+  assert(configPath.includes("llm_api"), "API手动配置路径未展示");
   await page.screenshot({ path: path.join(OUTPUT_ROOT, "desktop_api_settings.png"), fullPage: true });
 
   const mobile = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });
@@ -102,13 +121,19 @@ async function run() {
       navigationPassed: true,
       dryRunCompleted: true,
       apiPathVisible: true,
+      admissionVisible: true,
+      historyStorageVisible: true,
+      freshMemoryModePassed: true,
+      dynamicParameterSummaryPassed: true,
+      pauseStopControlsVisible: true,
+      demoModePassed: true,
     },
-    screenshots: ["desktop_dashboard.png", "desktop_control_completed.png", "desktop_api_settings.png", "mobile_dashboard.png"],
+    screenshots: ["desktop_dashboard.png", "desktop_control_completed.png", "desktop_data_admission.png", "desktop_history_storage.png", "desktop_api_settings.png", "mobile_dashboard.png"],
   };
   await writeFile(path.join(OUTPUT_ROOT, "qa_result.json"), JSON.stringify(result, null, 2), "utf8");
   await writeFile(path.join(OUTPUT_ROOT, "README.md"), [
     "# Agent交互界面视觉验收", "",
-    "本目录保存桌面看板、任务完成状态、API配置页和手机看板截图。",
+    "本目录保存桌面看板、任务完成状态、数据准入、历史空间、API配置页和手机看板截图。",
     "`qa_result.json`记录横向溢出、图表像素、控件交互和控制台错误检查结果。", "",
     "运行方式：在服务启动后，于`Agent交互界面`目录执行`node visual_qa.mjs`。",
   ].join("\n"), "utf8");

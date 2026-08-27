@@ -1,0 +1,21 @@
+name: windows-ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: 项目实现
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - run: python -m pip install -r 部署包/requirements.txt
+      - run: python ../scripts/check_public_release.py
+      - run: python -m pytest -q
+      - run: python -m llm_optimizer.run_agent --dry-run --output 输出/CI/dry_run

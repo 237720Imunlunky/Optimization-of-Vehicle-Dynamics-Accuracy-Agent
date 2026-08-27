@@ -8,6 +8,7 @@ import json
 import re
 import shutil
 from pathlib import Path
+from runtime_paths import load_runtime_paths
 from typing import Any
 
 from run_parameter_sensitivity import (
@@ -20,7 +21,7 @@ from run_parameter_sensitivity import (
 
 
 DEFAULT_OUTPUT = PROJECT_ROOT / "输出" / "控制输入闭环验收" / "iteration_control_acceptance_001"
-DEFAULT_RUNTIME = Path("F:/Carsim/AgentRuntime/parameter_agent/control_input_acceptance/iteration_control_acceptance_001")
+DEFAULT_RUNTIME = load_runtime_paths()["runtime_root"] / "control_input_acceptance" / "iteration_control_acceptance_001"
 
 
 def format_value(value: float) -> str:

@@ -27,7 +27,8 @@ def build_messages(
     system = (
         "你是CarSim纵向动力学参数优化器。你只能提出参数候选，不能修改控制Trace、评价公式、"
         "主减速比或CarSim底层模型。必须考虑参数耦合、物理边界和单轮变化限制。"
-        "输出必须是JSON对象，字段为diagnosis、candidates、stop_reason；禁止输出Markdown。"
+        "不要输出思考或分析过程，响应第一个字符必须是{。"
+        "输出必须是简短JSON对象，字段为diagnosis、candidates、stop_reason；禁止输出Markdown，整个响应不超过1200 tokens。"
         "每个候选的changes必须是数组，每项必须且只需包含parameter和value，"
         "例如{\"parameter\":\"rr_c\",\"value\":0.0065}；不要使用old_value或new_value。"
         "candidate_id必须是字符串，例如C1、C2、C3，不要输出数字类型。"

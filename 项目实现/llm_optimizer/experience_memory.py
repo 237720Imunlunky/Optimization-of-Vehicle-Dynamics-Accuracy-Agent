@@ -3,8 +3,12 @@
 from __future__ import annotations
 
 import copy
+import json
 from datetime import datetime
 from typing import Any
+
+from config_loader import load_project_config
+from .state_store import compact_state_history
 
 
 MEMORY_VERSION = "1.0"
@@ -157,7 +161,8 @@ def append_round_memory(state: dict[str, Any], round_experience: dict[str, Any])
         memory = empty_memory(policy_version)
         state["optimization_memory"] = memory
     memory["rounds"].append(round_experience)
-    memory["rounds"] = memory["rounds"][-MAX_MEMORY_ROUNDS:]
+    limit = int(load_project_config()["experience_policy"].get("state_round_limit", MAX_MEMORY_ROUNDS))
+    memory["rounds"] = memory["rounds"][-limit:]
 
 
 def consolidate_round_state(
@@ -178,45 +183,108 @@ def consolidate_round_state(
         consolidated["no_improvement_iterations"] = int(proposal_state.get("no_improvement_iterations", 0)) + 1
     append_round_memory(consolidated, round_experience)
     consolidated["last_round_experience"] = copy.deepcopy(round_experience)
-    return consolidated
+    return compact_state_history(consolidated)
 
 
-def candidate_prompt_record(candidate: dict[str, Any]) -> dict[str, Any]:
-    """进一步压缩单个候选经验，只保留下一轮决策需要的信息。"""
+def compact_parameter_changes(changes: dict[str, Any]) -> dict[str, dict[str, float]]:
+    """提示词只保留目标值和变化量，基线值可由两者反推。"""
     return {
-        "candidate_id": candidate["candidate_id"],
-        "outcome": candidate["outcome"],
-        "parameter_changes": candidate["parameter_changes"],
-        "calibration": candidate["calibration"],
-        "validation": candidate["validation"],
-        "all_data": candidate["all_data"],
+        name: {
+            "to": round(float(change["to"]), 6),
+            "delta": round(float(change["delta"]), 6),
+        }
+        for name, change in changes.items()
     }
 
 
-def build_prompt_memory(memory: dict[str, Any] | None) -> dict[str, Any]:
+def compact_ranked_metrics(rows: list[dict[str, Any]], limit: int = 2) -> list[dict[str, Any]]:
+    """每个数据层只保留最明显的两个改善或退化，避免指标列表重复膨胀。"""
+    return [
+        {"metric": item["metric"], "delta_pct": round(float(item["delta_pct"]), 4)}
+        for item in rows[:limit]
+    ]
+
+
+def compact_split_for_prompt(split: dict[str, Any], include_metrics: bool = True) -> dict[str, Any]:
+    """保留接受判断、保护线和主要得失，删除提示词不需要的重复字段。"""
+    compact = {
+        "accepted": bool(split.get("accepted")),
+        "guard_failures": list(split.get("guard_failures", [])),
+        "score_delta_pct": round(float(split.get("score_delta_pct", 0.0)), 4),
+        "failed_metric_reduction": int(split.get("failed_metric_reduction", 0)),
+    }
+    if include_metrics:
+        compact["top_improvements"] = compact_ranked_metrics(split.get("top_improvements", []))
+        compact["top_regressions"] = compact_ranked_metrics(split.get("top_regressions", []))
+    return compact
+
+
+def candidate_prompt_record(candidate: dict[str, Any]) -> dict[str, Any]:
+    """生成融合或回退方向所需的紧凑候选经验。"""
+    return {
+        "candidate_id": candidate["candidate_id"],
+        "outcome": candidate["outcome"],
+        "parameter_changes": compact_parameter_changes(candidate["parameter_changes"]),
+        "calibration": compact_split_for_prompt(candidate["calibration"]),
+        "validation": compact_split_for_prompt(candidate["validation"]),
+        # 全量层只保留总分与未通过项变化，主要指标得失在标定/验证层已经表达。
+        "all_data": compact_split_for_prompt(candidate["all_data"], include_metrics=False),
+    }
+
+
+def parameter_direction_signature(record: dict[str, Any], policy_version: str | None) -> str:
+    """用参数名称和变化方向识别重复经验，不把数值微小差异重复塞入提示词。"""
+    changes = record.get("parameter_changes", {})
+    directions = [f"{name}:{'+' if float(change.get('delta', 0)) > 0 else '-'}" for name, change in sorted(changes.items())]
+    return f"{policy_version or 'unknown'}|{'|'.join(directions)}"
+
+
+def deduplicate_records(records: list[dict[str, Any]], policy_version: str | None) -> list[dict[str, Any]]:
+    """相同参数方向只保留最近一次，减少重复经验造成的提示词偏置。"""
+    selected: dict[str, dict[str, Any]] = {}
+    for record in records:
+        selected[parameter_direction_signature(record, policy_version)] = record
+    return list(selected.values())
+
+
+def fit_prompt_budget(payload: dict[str, Any], character_budget: int) -> dict[str, Any]:
+    """从最旧的失败/融合记录开始裁剪，确保经验JSON不超过配置预算。"""
+    compact = copy.deepcopy(payload)
+    while len(json.dumps(compact, ensure_ascii=False, separators=(",", ":"))) > character_budget:
+        if compact.get("recent_rejected_directions"):
+            compact["recent_rejected_directions"].pop(0)
+        elif compact.get("validated_fusion_sources"):
+            compact["validated_fusion_sources"].pop(0)
+        elif compact.get("recent_rounds"):
+            compact["recent_rounds"].pop(0)
+        else:
+            break
+    compact["character_budget"] = character_budget
+    compact["serialized_characters"] = len(json.dumps(compact, ensure_ascii=False, separators=(",", ":")))
+    return compact
+
+
+def build_prompt_memory(memory: dict[str, Any] | None, policy: dict[str, Any] | None = None) -> dict[str, Any]:
     """构造给LLM的短期经验、可融合来源和近期失败方向。"""
     if not memory or not memory.get("rounds"):
         return {
             "available": False,
             "instruction": "暂无同口径历史经验，首轮按C1利用、C2互补、C3探索生成独立候选",
         }
-    recent_rounds = memory["rounds"][-PROMPT_MEMORY_ROUNDS:]
+    settings = policy or load_project_config()["experience_policy"]
+    recent_rounds = memory["rounds"][-int(settings.get("prompt_round_limit", PROMPT_MEMORY_ROUNDS)):]
     fusion_sources = []
     rejected_directions = []
     for round_item in recent_rounds:
         for candidate in round_item["candidates"]:
-            compact = {
-                "iteration": round_item["iteration"],
-                "candidate_id": candidate["candidate_id"],
-                "parameter_changes": candidate["parameter_changes"],
-                "validation": candidate["validation"],
-                "all_data": candidate["all_data"],
-            }
+            compact = {"iteration": round_item["iteration"], **candidate_prompt_record(candidate)}
             if candidate["outcome"] == "validated_non_winner":
                 fusion_sources.append(compact)
             elif candidate["outcome"] == "rolled_back":
                 rejected_directions.append(compact)
-    return {
+    fusion_sources = deduplicate_records(fusion_sources, memory.get("policy_version"))
+    rejected_directions = deduplicate_records(rejected_directions, memory.get("policy_version"))
+    payload = {
         "available": True,
         "policy_version": memory.get("policy_version"),
         "recent_rounds": [
@@ -225,14 +293,19 @@ def build_prompt_memory(memory: dict[str, Any] | None) -> dict[str, Any]:
                 "winner_candidate_id": item["winner_candidate_id"],
                 "all_rolled_back": item["all_rolled_back"],
                 "proposal_rejections": item.get("proposal_rejections", []),
-                "candidates": [candidate_prompt_record(candidate) for candidate in item["candidates"]],
+                # 详细数据已按用途放入融合来源或回退方向，这里只保留轮次索引，避免重复发送。
+                "candidates": [
+                    {"candidate_id": candidate["candidate_id"], "outcome": candidate["outcome"]}
+                    for candidate in item["candidates"]
+                ],
             }
             for item in recent_rounds
         ],
-        "validated_fusion_sources": fusion_sources[-4:],
-        "recent_rejected_directions": rejected_directions[-6:],
+        "validated_fusion_sources": fusion_sources[-int(settings.get("maximum_fusion_sources", 4)):],
+        "recent_rejected_directions": rejected_directions[-int(settings.get("maximum_rejected_directions", 6)):],
         "causality_warning": "多参数候选只能证明组合效果，不能把单一参数变化直接解释为因果",
     }
+    return fit_prompt_budget(payload, int(settings.get("prompt_character_budget", 12000)))
 
 
 def initialize_state_memory(state: dict[str, Any], source_state: str) -> dict[str, Any]:
