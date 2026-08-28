@@ -36,6 +36,7 @@ powershell -ExecutionPolicy Bypass -File ".\install.ps1" `
 - `verify_installation.cmd` / `verify_installation.ps1`：环境体检加干运行验收；
 - `health_check.py`：输出三级环境结论；
 - `requirements.txt`：固定 Python 依赖。
+- `wheelhouse/`：压缩发布包可附带的Python 3.14 Windows x64离线依赖；存在时安装器自动优先使用。
 
 体检和验收结果统一保存到 `项目实现/输出/部署体检/` 与 `项目实现/输出/部署验收/`。
 详细说明见仓库根目录 `docs/OPEN_SOURCE_DEPLOYMENT.md`。

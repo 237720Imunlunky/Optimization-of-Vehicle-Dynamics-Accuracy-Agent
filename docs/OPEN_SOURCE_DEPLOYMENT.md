@@ -30,6 +30,8 @@
 `项目实现/部署包/install_agent.cmd`
 
 安装器优先把环境放在 F 盘；没有 F 盘时使用当前用户的本机应用数据目录。它不会安装 CarSim。
+GitHub Release 的可复制压缩包附带 `部署包/wheelhouse/` 时，Python 依赖可以离线安装；源码 ZIP
+没有 wheelhouse 时需要访问 PyPI。
 
 命令行可指定不同路径：
 

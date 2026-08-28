@@ -76,7 +76,15 @@ if (-not (Test-Path -LiteralPath $venvPython)) {
 }
 & $venvPython -m pip install --upgrade pip
 Assert-ExternalCommandSucceeded -Step "升级pip"
-& $venvPython -m pip install -r (Join-Path $PSScriptRoot "requirements.txt")
+$wheelhouse = Join-Path $PSScriptRoot "wheelhouse"
+$offlineWheels = @(Get-ChildItem -LiteralPath $wheelhouse -Filter "*.whl" -ErrorAction SilentlyContinue)
+if ($offlineWheels.Count -gt 0) {
+    Write-Host "检测到离线依赖包，使用部署包内wheelhouse安装。"
+    & $venvPython -m pip install --no-index --find-links $wheelhouse -r (Join-Path $PSScriptRoot "requirements.txt")
+} else {
+    Write-Host "未发现离线依赖包，从PyPI安装。"
+    & $venvPython -m pip install -r (Join-Path $PSScriptRoot "requirements.txt")
+}
 Assert-ExternalCommandSucceeded -Step "安装Python依赖"
 
 $detectedCarSim = Find-CarSimRoot -ExplicitRoot $CarSimRoot
