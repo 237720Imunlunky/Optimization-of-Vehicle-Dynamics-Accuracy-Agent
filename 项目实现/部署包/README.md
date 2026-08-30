@@ -40,3 +40,18 @@ powershell -ExecutionPolicy Bypass -File ".\install.ps1" `
 
 体检和验收结果统一保存到 `项目实现/输出/部署体检/` 与 `项目实现/输出/部署验收/`。
 详细说明见仓库根目录 `docs/OPEN_SOURCE_DEPLOYMENT.md`。
+
+## Ubuntu/Bash
+
+Ubuntu 用户不能运行 `.cmd` 和 `.ps1`，请在仓库根目录执行：
+
+```bash
+chmod +x 项目实现/部署包/install_ubuntu.sh 项目实现/部署包/start_ubuntu.sh 项目实现/部署包/verify_ubuntu.sh
+./项目实现/部署包/install_ubuntu.sh
+./项目实现/部署包/verify_ubuntu.sh
+./项目实现/部署包/start_ubuntu.sh
+```
+
+默认虚拟环境在 `项目实现/.venv`，CarSim 临时目录在 `/tmp/VehicleDynamicsAgent/Runtime`。
+Ubuntu 版支持演示、干运行、BLF解码、数据准入、结果评价和界面；CarSim 2023.2 的 Windows CLI/DLL
+不能在原生 Ubuntu 直接运行，完整闭环需 Windows CarSim 或远程 Windows 求解服务。

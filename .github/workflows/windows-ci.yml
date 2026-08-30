@@ -28,3 +28,20 @@ jobs:
         run: |
           $env:PYTHONPATH = Join-Path $PWD "项目实现"
           python -m llm_optimizer.run_agent --dry-run --output "项目实现/输出/CI/dry_run"
+
+  ubuntu-demo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: python -m pip install -r "项目实现/部署包/requirements.txt"
+      - name: Check bash scripts
+        run: bash -n 项目实现/部署包/install_ubuntu.sh 项目实现/部署包/start_ubuntu.sh 项目实现/部署包/verify_ubuntu.sh
+      - name: Run Ubuntu demo dry run
+        run: |
+          chmod +x 项目实现/部署包/*.sh
+          ./项目实现/部署包/install_ubuntu.sh
+          ./项目实现/部署包/verify_ubuntu.sh

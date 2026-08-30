@@ -101,9 +101,11 @@ def build_report() -> dict[str, object]:
         "VEHICLE_AGENT_LLM_CONFIG",
         PROJECT_ROOT / "Agent交互界面" / "config" / "llm_api.local.json",
     ))
+    is_linux = platform.system() == "Linux"
+    is_windows = platform.system() == "Windows"
     checks = [
-        {"name": "Windows x64", "available": platform.system() == "Windows" and platform.machine().endswith("64")},
-        {"name": "Python 3.14 x64", "available": sys.version_info[:2] == (3, 14) and sys.maxsize > 2**32},
+        {"name": "支持的操作系统", "available": (is_windows or is_linux) and platform.machine().lower() in {"amd64", "x86_64", "aarch64"}, "system": platform.system(), "arch": platform.machine()},
+        {"name": "Python 3.10+", "available": sys.version_info >= (3, 10) and sys.maxsize > 2**32},
         module_status("can"), module_status("cantools"),
         file_status("实车数据目录", paths["data_root"]),
         {"name": "DBC文件", "available": bool(dbc_files), "count": len(dbc_files)},
@@ -115,7 +117,7 @@ def build_report() -> dict[str, object]:
         formal_result_status(paths["formal_result_path"], bool(paths["formal_result_is_demo"])),
         llm_config_status(llm_config),
     ]
-    demo_names = {"Windows x64", "Python 3.14 x64", "can", "cantools", "VS/VSB转换器", "正式基线"}
+    demo_names = {"支持的操作系统", "Python 3.10+", "can", "cantools", "VS/VSB转换器", "正式基线"}
     demo_ready = all(bool(item["available"]) for item in checks if item["name"] in demo_names)
     data_names = demo_names | {"实车数据目录", "DBC文件"}
     data_ready = all(bool(item["available"]) for item in checks if item["name"] in data_names)

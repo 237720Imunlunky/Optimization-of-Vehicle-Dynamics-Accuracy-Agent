@@ -192,6 +192,8 @@ def admission_payload() -> dict[str, Any]:
 def full_optimization_preflight() -> None:
     """真实闭环启动前检查CarSim和数据准入，干运行不受这些条件限制。"""
     missing = []
+    if os.name != "nt":
+        missing.append("原生CarSim闭环仅支持Windows；Ubuntu请使用演示/数据工作流，或配置远程Windows求解节点")
     try:
         ensure_f_drive_for_mutable_paths(RUNTIME_PATHS)
     except ValueError as error:
@@ -952,9 +954,12 @@ class AgentRequestHandler(BaseHTTPRequestHandler):
                 self.send_json(api_config_status())
                 return
             if path == "/api/config/open":
-                if os.name != "nt":
+                if os.name == "nt":
+                    os.startfile(CONFIG_PATH)  # type: ignore[attr-defined]
+                elif sys.platform.startswith("linux"):
+                    subprocess.Popen(["xdg-open", str(CONFIG_PATH)])
+                else:
                     raise RuntimeError("当前系统不支持自动打开配置文件")
-                os.startfile(CONFIG_PATH)  # type: ignore[attr-defined]
                 self.send_json({"opened": True, "path": str(CONFIG_PATH)})
                 return
             if path == "/api/jobs/start":

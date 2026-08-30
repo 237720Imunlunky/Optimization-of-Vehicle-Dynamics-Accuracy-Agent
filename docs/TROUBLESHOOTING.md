@@ -29,3 +29,8 @@ CarSim Runtime 不能包含中文。项目、数据和输出目录可以包含�
 ## CarSim 文件存在但求解失败
 
 文件检查不能证明许可证有效。先在 CarSim 本体中确认许可证和相同车辆模型可运行，再检查模板绑定字段和 Runtime 权限。
+
+## Ubuntu 上无法运行 CarSim
+
+这是平台限制，不是 Bash 脚本错误。CarSim 2023.2 的 CLI Solver 和 DLL 是 Windows 组件。
+Ubuntu 上使用 `verify_ubuntu.sh` 验收数据和干运行；完整优化请在 Windows 安装 CarSim，或实现远程 Windows 求解服务。

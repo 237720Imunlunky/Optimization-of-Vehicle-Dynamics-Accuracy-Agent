@@ -91,7 +91,9 @@ def discover_carsim_root(explicit: str | Path | None = None) -> Path:
 
 
 def _default_runtime_root() -> Path:
-    """优先使用F盘纯英文目录；没有F盘时使用本机应用数据目录。"""
+    """Windows优先使用F盘；Ubuntu使用ASCII临时目录，避免CarSim控制文件编码问题。"""
+    if os.name != "nt":
+        return Path("/tmp/VehicleDynamicsAgent/Runtime")
     if Path("F:/").exists():
         return Path("F:/VehicleDynamicsAgent/Runtime")
     local_app_data = Path(os.environ.get("LOCALAPPDATA", "C:/VehicleDynamicsAgent"))
@@ -137,7 +139,7 @@ def ensure_f_drive_for_mutable_paths(paths: dict[str, Path] | None = None) -> No
     runtime_root = Path(resolved["runtime_root"])
     if not runtime_root.is_absolute():
         raise ValueError(f"CarSim运行目录必须是绝对路径：{runtime_root}")
-    if not str(runtime_root).isascii():
+    if os.name == "nt" and not str(runtime_root).isascii():
         raise ValueError(f"CarSim运行目录必须使用纯英文ASCII路径：{runtime_root}")
     if runtime_root == Path(runtime_root.anchor):
         raise ValueError("CarSim运行目录不能直接配置为磁盘根目录")

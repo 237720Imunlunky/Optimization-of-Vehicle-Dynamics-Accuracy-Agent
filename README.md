@@ -32,6 +32,17 @@ CarSim 2023.2、车辆模板、DBC/BLF、本车正式基线和 OpenAI 兼容模�
 
 详细安装与资产清单见 [开源部署指南](docs/OPEN_SOURCE_DEPLOYMENT.md)。
 
+Ubuntu 用户请使用 Bash 入口：
+
+```bash
+chmod +x 项目实现/部署包/install_ubuntu.sh 项目实现/部署包/start_ubuntu.sh 项目实现/部署包/verify_ubuntu.sh
+./项目实现/部署包/install_ubuntu.sh
+./项目实现/部署包/verify_ubuntu.sh
+./项目实现/部署包/start_ubuntu.sh
+```
+
+Ubuntu 支持演示、干运行、数据解码、准入审查、评价和本地界面；CarSim 2023.2 的 Windows 求解器需在 Windows 或远程 Windows 节点运行。
+
 ## 文档
 
 - [开源部署指南](docs/OPEN_SOURCE_DEPLOYMENT.md)

@@ -23,6 +23,10 @@
 - 至少 10 GB 可用空间；完整优化建议预留 30 GB；
 - 项目路径可以包含中文，但 CarSim Runtime 必须使用纯英文 ASCII 路径。
 
+Ubuntu 22.04/24.04 x86_64 可运行演示、干运行、数据解码、准入审查、评价和本地界面；需要
+`python3`、`python3-venv`、`python3-pip` 和现代浏览器。Ubuntu 原生不支持 CarSim 2023.2
+Windows CLI/DLL，完整闭环必须使用 Windows CarSim，或后续配置远程 Windows 求解节点。
+
 ## 第一次安装
 
 双击：
@@ -80,3 +84,15 @@ python -m pytest -q
 ```
 
 确认 `实车数据/`、`项目实现/输出/`、`local_assets` 私有内容和所有本机配置没有进入提交。
+
+## Ubuntu/Bash 安装
+
+```bash
+chmod +x 项目实现/部署包/install_ubuntu.sh 项目实现/部署包/start_ubuntu.sh 项目实现/部署包/verify_ubuntu.sh
+./项目实现/部署包/install_ubuntu.sh
+./项目实现/部署包/verify_ubuntu.sh
+./项目实现/部署包/start_ubuntu.sh
+```
+
+脚本会自动创建虚拟环境、安装依赖、生成本机路径配置并运行分级体检。API 配置仍放在
+`项目实现/Agent交互界面/config/llm_api.local.json`，可直接编辑或使用 `xdg-open` 打开。
