@@ -83,7 +83,7 @@ $env:CARSIM_ROOT="D:\Engineering\CarSim2023.2\install"
 git status --short
 git check-ignore "项目实现/config/runtime.local.json"
 git check-ignore "项目实现/Agent交互界面/config/llm_api.local.json"
-python -m pytest -q
+python -m pytest -q --ignore=输出
 ```
 
 确认 `实车数据/`、`项目实现/输出/`、`local_assets` 私有内容和所有本机配置没有进入提交。

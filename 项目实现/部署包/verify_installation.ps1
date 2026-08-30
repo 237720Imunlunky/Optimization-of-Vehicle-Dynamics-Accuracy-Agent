@@ -29,7 +29,7 @@ try {
     & $python -m llm_optimizer.run_agent --dry-run --output $dryOutput
     if ($LASTEXITCODE -ne 0) { throw "干运行失败" }
     if ($FullTests) {
-        & $python -m pytest -q
+        & $python -m pytest -q --ignore=输出
         if ($LASTEXITCODE -ne 0) { throw "单元测试失败" }
     }
 } finally {
