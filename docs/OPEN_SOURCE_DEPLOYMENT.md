@@ -64,6 +64,9 @@ $env:CARSIM_ROOT="D:\Engineering\CarSim2023.2\install"
 - `data_workflow`：DBC/BLF 已就绪，可以解码和准入；
 - `full_optimization`：CarSim、车辆模板、本车基线、数据和 API 全部就绪。
 
+双击 `项目实现/部署包/start_agent.cmd` 启动网页。脚本会先探测 `/api/job`，确认服务已真正启动后再打开浏览器；
+默认端口 `8765` 被占用时会自动选择后续可用端口并显示实际地址。
+
 ## 完整优化准备顺序
 
 1. 安装并激活合法授权的 CarSim 2023.2。

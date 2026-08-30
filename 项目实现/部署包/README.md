@@ -6,7 +6,7 @@
 2. 安装 Python 3.14 x64 并加入 PATH。
 3. 双击 `install_agent.cmd`。
 4. 双击 `verify_installation.cmd` 查看当前可用级别。
-5. 双击 `start_agent.cmd`，浏览器打开 `http://127.0.0.1:8765`。
+5. 双击 `start_agent.cmd`，脚本会等待服务就绪并自动打开浏览器。默认地址为 `http://127.0.0.1:8765`；如果端口被占用，会自动切换并在窗口显示实际地址。
 
 安装器优先使用 F 盘；电脑没有 F 盘时使用本机应用数据目录。CarSim Runtime 可以位于任意盘，
 但必须是纯英文 ASCII 绝对路径。

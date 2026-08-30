@@ -34,3 +34,8 @@ CarSim Runtime 不能包含中文。项目、数据和输出目录可以包含�
 
 这是平台限制，不是 Bash 脚本错误。CarSim 2023.2 的 CLI Solver 和 DLL 是 Windows 组件。
 Ubuntu 上使用 `verify_ubuntu.sh` 验收数据和干运行；完整优化请在 Windows 安装 CarSim，或实现远程 Windows 求解服务。
+
+## 浏览器没有自动打开
+
+查看启动窗口中的 `Agent已启动` 地址并手动打开。脚本会自动处理 `8765` 端口冲突；若启动超时，
+先运行 `verify_installation.cmd` 查看 Python、依赖和配置状态。
