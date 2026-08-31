@@ -15,6 +15,12 @@ if (-not (Test-Path -LiteralPath $runtimeConfig)) {
 }
 $configText = [System.IO.File]::ReadAllText($runtimeConfig, [System.Text.Encoding]::UTF8)
 $config = $configText | ConvertFrom-Json
+$formalPath = Join-Path $projectRoot ([string]$config.formal_result_path)
+if (-not (Test-Path -LiteralPath $formalPath)) {
+    # 旧版部署包可能已有runtime.local.json但没有正式基线，验收应回退到公开演示基线。
+    $config.formal_result_path = "demo_assets/formal_acceptance.demo.json"
+    $config | ConvertTo-Json | Set-Content -LiteralPath $runtimeConfig -Encoding utf8
+}
 $python = Join-Path ([string]$config.install_root) "venv\Scripts\python.exe"
 if (-not (Test-Path -LiteralPath $python)) { throw "未找到安装环境：$python" }
 

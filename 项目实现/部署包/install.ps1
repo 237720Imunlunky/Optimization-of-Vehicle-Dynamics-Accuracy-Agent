@@ -111,6 +111,17 @@ if (-not (Test-Path -LiteralPath $localConfig)) {
         install_root = ($resolvedInstall -replace '\\', '/')
     }
     $configuration | ConvertTo-Json | Set-Content -LiteralPath $localConfig -Encoding utf8
+} else {
+    # 已存在的旧配置也要校正：正式基线缺失时不能继续指向不存在的local_assets文件。
+    $configText = [System.IO.File]::ReadAllText($localConfig, [System.Text.Encoding]::UTF8)
+    $existing = $configText | ConvertFrom-Json
+    $existing.formal_result_path = if (Test-Path -LiteralPath $localBaseline) {
+        "local_assets/formal_baseline/formal_acceptance.json"
+    } else {
+        "demo_assets/formal_acceptance.demo.json"
+    }
+    if (-not $existing.install_root) { $existing.install_root = ($resolvedInstall -replace '\\', '/') }
+    $existing | ConvertTo-Json | Set-Content -LiteralPath $localConfig -Encoding utf8
 }
 
 $apiExample = Join-Path $projectRoot "Agent交互界面\config\llm_api.example.json"
