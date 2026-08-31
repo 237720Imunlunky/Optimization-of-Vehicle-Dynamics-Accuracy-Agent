@@ -16,6 +16,7 @@ from runtime_paths import load_runtime_paths
 
 
 TASK_PATTERN = re.compile(r"^(ui_\d{8}_\d{6})(?:_|$)")
+RUNTIME_TASK_PATTERN = re.compile(r"^(?:ui_)?(\d{8}_\d{6})(?:_|$)")
 ARCHIVE_FOLDER = "任务档案"
 
 
@@ -60,6 +61,20 @@ def task_directories(output_root: Path) -> dict[str, list[Path]]:
         task_id = task_id_from_name(path.name)
         if task_id:
             grouped.setdefault(task_id, []).append(path)
+    return grouped
+
+
+def runtime_task_directories(runtime_root: Path) -> dict[str, list[Path]]:
+    """扫描CarSim Runtime候选目录，并按任务时间戳归组。"""
+    grouped: dict[str, list[Path]] = {}
+    if not runtime_root.exists():
+        return grouped
+    for path in runtime_root.iterdir():
+        if not path.is_dir():
+            continue
+        match = RUNTIME_TASK_PATTERN.match(path.name)
+        if match:
+            grouped.setdefault(f"ui_{match.group(1)}", []).append(path)
     return grouped
 
 
@@ -147,8 +162,14 @@ def latest_active_task(grouped: dict[str, list[Path]]) -> str | None:
 def history_overview() -> dict[str, Any]:
     """返回任务空间、摘要状态、保护原因和可释放空间。"""
     config = load_project_config()["history_retention"]
-    output_root = load_runtime_paths()["output_root"] / "LLM参数优化Agent"
+    paths = load_runtime_paths()
+    output_root = paths["output_root"] / "LLM参数优化Agent"
     grouped = task_directories(output_root)
+    runtime_root = paths.get("runtime_root")
+    if runtime_root:
+        runtime_grouped = runtime_task_directories(Path(runtime_root) / "llm_optimizer" / "ui_jobs")
+        for task_id, runtime_paths in runtime_grouped.items():
+            grouped.setdefault(task_id, []).extend(runtime_paths)
     ordered = sorted(grouped, key=lambda task_id: max(path.stat().st_mtime for path in grouped[task_id]), reverse=True)
     recent = set(ordered[: int(config["full_task_count"])])
     current = latest_active_task(grouped)
@@ -172,11 +193,14 @@ def history_overview() -> dict[str, Any]:
             "protected": bool(reasons), "protection_reasons": reasons, "cleanup_eligible": eligible,
             "estimated_reclaim_bytes": size if eligible else 0,
         })
+    unarchived = [item for item in tasks if "尚无已验证经验摘要" in item["protection_reasons"]]
     return {
         "automatic_cleanup_enabled": bool(config.get("automatic_cleanup_enabled", False)),
         "retained_full_task_count": int(config["full_task_count"]), "current_task_id": current,
         "total_size_bytes": sum(item["size_bytes"] for item in tasks),
         "estimated_reclaim_bytes": sum(item["estimated_reclaim_bytes"] for item in tasks),
+        "unarchived_task_count": len(unarchived),
+        "unarchived_size_bytes": sum(item["size_bytes"] for item in unarchived),
         "tasks": tasks,
     }
 
@@ -191,14 +215,22 @@ def cleanup_eligible_tasks(confirm: str, task_ids: list[str] | None = None) -> d
     blocked = sorted(requested - allowed)
     if blocked:
         raise ValueError(f"以下任务受保护或摘要未验证，禁止清理：{', '.join(blocked)}")
-    output_root = load_runtime_paths()["output_root"] / "LLM参数优化Agent"
+    paths = load_runtime_paths()
+    output_root = paths["output_root"] / "LLM参数优化Agent"
+    runtime_root = paths.get("runtime_root")
+    allowed_roots = [output_root.resolve()]
+    if runtime_root:
+        allowed_roots.append((Path(runtime_root) / "llm_optimizer" / "ui_jobs").resolve())
     grouped = task_directories(output_root)
+    if runtime_root:
+        for task_id, runtime_paths in runtime_task_directories(Path(runtime_root) / "llm_optimizer" / "ui_jobs").items():
+            grouped.setdefault(task_id, []).extend(runtime_paths)
     removed = []
     reclaimed = 0
     for task_id in sorted(requested):
         for path in grouped.get(task_id, []):
             resolved = path.resolve()
-            if resolved.parent != output_root.resolve() or task_id_from_name(resolved.name) != task_id:
+            if resolved.parent not in allowed_roots or not RUNTIME_TASK_PATTERN.match(resolved.name):
                 raise RuntimeError(f"清理目标越界，已停止：{resolved}")
             reclaimed += directory_size(resolved)
             shutil.rmtree(resolved)

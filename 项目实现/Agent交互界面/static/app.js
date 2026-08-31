@@ -190,9 +190,21 @@ function formatBytes(bytes) {
 
 function renderStorage(payload) {
   state.historyStorage = payload;
-  setText("history-space-summary", `合计 ${formatBytes(payload.total_size_bytes)} · 可释放 ${formatBytes(payload.estimated_reclaim_bytes)} · 完整保留最近 ${payload.retained_full_task_count} 次`);
+  const summary = Number(payload.estimated_reclaim_bytes) > 0
+    ? `合计 ${formatBytes(payload.total_size_bytes)} · 可释放 ${formatBytes(payload.estimated_reclaim_bytes)} · 完整保留最近 ${payload.retained_full_task_count} 次`
+    : `合计 ${formatBytes(payload.total_size_bytes)} · 当前暂无满足清理条件的任务（最近任务、当前任务或摘要未验证）${payload.unarchived_task_count ? ` · ${payload.unarchived_task_count} 个旧任务尚未归档` : ""}`;
+  setText("history-space-summary", summary);
   const body = document.getElementById("storage-table-body");
   body.replaceChildren();
+  if (!payload.tasks.length) {
+    const tr = document.createElement("tr");
+    const td = document.createElement("td");
+    td.colSpan = 5;
+    td.className = "muted-cell";
+    td.textContent = "暂未发现可纳入历史管理的优化任务";
+    tr.appendChild(td);
+    body.appendChild(tr);
+  }
   payload.tasks.forEach((task) => {
     const tr = document.createElement("tr");
     const values = [task.task_id, `${task.size_mb.toFixed(2)} MB`, task.summary_verified ? "已验证" : "未验证", task.protected ? task.protection_reasons.join("；") : "可清理", formatBytes(task.estimated_reclaim_bytes)];
