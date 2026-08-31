@@ -27,6 +27,7 @@
 **/htmlcov/
 /项目实现/.venv/
 /项目实现/部署包/wheelhouse/
+/项目实现/部署包/logs/
 
 # 编辑器和操作系统临时文件。
 **/.vscode/

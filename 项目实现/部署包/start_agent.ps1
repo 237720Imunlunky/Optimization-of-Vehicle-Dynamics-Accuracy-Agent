@@ -6,6 +6,11 @@
 
 $ErrorActionPreference = "Stop"
 $packageRoot = Split-Path -Parent $PSScriptRoot
+$logRoot = Join-Path $PSScriptRoot "logs"
+New-Item -ItemType Directory -Force -Path $logRoot | Out-Null
+$logPath = Join-Path $logRoot ("start_{0}.log" -f (Get-Date -Format "yyyyMMdd_HHmmss"))
+Start-Transcript -Path $logPath -Force | Out-Null
+Write-Host "启动日志：$logPath"
 $runtimeConfig = Join-Path $packageRoot "config\runtime.local.json"
 if (-not $InstallRoot -and (Test-Path -LiteralPath $runtimeConfig)) {
     $configText = [System.IO.File]::ReadAllText($runtimeConfig, [System.Text.Encoding]::UTF8)
@@ -30,15 +35,16 @@ function Find-FreePort {
 
 function Wait-AgentReady {
     param([int]$ReadyPort, [System.Diagnostics.Process]$Process)
-    $url = "http://127.0.0.1:$ReadyPort/api/job"
+    $baseUrl = "http://127.0.0.1:$ReadyPort/"
+    $healthUrl = "${baseUrl}api/job"
     for ($attempt = 1; $attempt -le 30; $attempt++) {
         if ($Process.HasExited) { throw "Agent进程提前退出，退出码：$($Process.ExitCode)" }
         try {
-            $response = Invoke-WebRequest -UseBasicParsing -Uri $url -TimeoutSec 2
-            if ($response.StatusCode -eq 200) { return $url }
+            $response = Invoke-WebRequest -UseBasicParsing -Uri $healthUrl -TimeoutSec 2
+            if ($response.StatusCode -eq 200) { return $baseUrl }
         } catch { Start-Sleep -Milliseconds 300 }
     }
-    throw "Agent启动超时，30秒内未能访问：$url"
+    throw "Agent启动超时，30秒内未能访问：$healthUrl"
 }
 
 $actualPort = Find-FreePort -StartPort $Port

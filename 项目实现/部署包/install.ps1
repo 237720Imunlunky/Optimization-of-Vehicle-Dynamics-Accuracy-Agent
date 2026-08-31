@@ -7,6 +7,11 @@
 
 $ErrorActionPreference = "Stop"
 $projectRoot = Split-Path -Parent $PSScriptRoot
+$logRoot = Join-Path $PSScriptRoot "logs"
+New-Item -ItemType Directory -Force -Path $logRoot | Out-Null
+$logPath = Join-Path $logRoot ("install_{0}.log" -f (Get-Date -Format "yyyyMMdd_HHmmss"))
+Start-Transcript -Path $logPath -Force | Out-Null
+Write-Host "安装日志：$logPath"
 
 function Assert-ExternalCommandSucceeded {
     param([string]$Step)

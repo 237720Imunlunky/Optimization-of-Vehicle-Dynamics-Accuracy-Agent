@@ -4,6 +4,11 @@
 
 $ErrorActionPreference = "Stop"
 $projectRoot = Split-Path -Parent $PSScriptRoot
+$logRoot = Join-Path $PSScriptRoot "logs"
+New-Item -ItemType Directory -Force -Path $logRoot | Out-Null
+$logPath = Join-Path $logRoot ("verify_{0}.log" -f (Get-Date -Format "yyyyMMdd_HHmmss"))
+Start-Transcript -Path $logPath -Force | Out-Null
+Write-Host "验收日志：$logPath"
 $runtimeConfig = Join-Path $projectRoot "config\runtime.local.json"
 if (-not (Test-Path -LiteralPath $runtimeConfig)) {
     throw "尚未生成runtime.local.json，请先运行install_agent.cmd。"
