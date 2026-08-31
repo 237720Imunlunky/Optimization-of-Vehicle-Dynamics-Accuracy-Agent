@@ -11,7 +11,7 @@
       "evaluator": "longitudinal_acceleration",
       "group": "acceleration",
       "required_signals": ["speed_kmh", "accel_pedal_pct", "brake_pedal"],
-      "required_manual_evidence": ["gear", "drive_mode", "road_condition"],
+      "required_manual_evidence": ["gear", "drive_mode"],
       "metrics": ["speed_r2", "speed_nrmse", "peak_ax", "target_time"],
       "admission": {
         "start_speed_range_kmh": [0.0, 3.0],
@@ -33,7 +33,7 @@
       "evaluator": "longitudinal_acceleration",
       "group": "acceleration",
       "required_signals": ["speed_kmh", "accel_pedal_pct", "brake_pedal"],
-      "required_manual_evidence": ["gear", "drive_mode", "road_condition"],
+      "required_manual_evidence": ["gear", "drive_mode"],
       "metrics": ["speed_r2", "speed_nrmse", "peak_ax", "target_time"],
       "admission": {
         "start_speed_range_kmh": [55.0, 66.0],
@@ -55,7 +55,7 @@
       "evaluator": "longitudinal_coasting",
       "group": "coasting",
       "required_signals": ["speed_kmh", "accel_pedal_pct", "brake_pedal"],
-      "required_manual_evidence": ["gear", "drive_mode", "road_condition", "regeneration"],
+      "required_manual_evidence": ["gear", "drive_mode", "regeneration"],
       "metrics": ["speed_r2", "speed_nrmse", "coasting_distance", "target_time"],
       "admission": {
         "window_kmh": [50.0, 30.0],
