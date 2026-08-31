@@ -32,6 +32,18 @@ EVIDENCE_FILES = (
 )
 
 
+def clean_current_baseline_dirs(output: Path, runtime: Path) -> None:
+    """每次正式基线运行前清理同名临时目录，避免残留文件干扰；其他历史目录不受影响。"""
+    project_output = (PROJECT_ROOT / "输出").resolve()
+    runtime_root = load_runtime_paths()["runtime_root"].resolve()
+    for target, parent in ((output.resolve(), project_output), (runtime.resolve(), runtime_root)):
+        if not target.exists():
+            continue
+        if target.name != "当前配置基线" or parent not in target.parents:
+            raise RuntimeError(f"自动清理目标不安全，已停止：{target}")
+        shutil.rmtree(target)
+
+
 def load_config() -> dict[str, Any]:
     """读取项目唯一配置入口。"""
     return load_project_config()
@@ -232,10 +244,7 @@ def write_report(output: Path, results: list[dict[str, Any]], summary: dict[str,
 
 def run_acceptance(template: Path, truth_root: Path, output: Path, runtime: Path) -> dict[str, Any]:
     """编排全部正式工况并返回纵向综合结果。"""
-    if output.exists():
-        raise FileExistsError(f"归档目录已存在，拒绝覆盖：{output}")
-    if runtime.exists():
-        raise FileExistsError(f"运行目录已存在，拒绝混用旧结果：{runtime}")
+    clean_current_baseline_dirs(output, runtime)
     output.mkdir(parents=True)
     runtime.mkdir(parents=True)
     config = load_config()
