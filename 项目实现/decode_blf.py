@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import csv
+import argparse
 import json
 import sys
 from pathlib import Path
 from typing import Any
 
 from runtime_paths import load_runtime_paths
+from config_loader import load_project_config
 
 
 STANDARD_GRAVITY_MPS2 = 9.80665
@@ -120,3 +122,45 @@ def decode_all(data_root: Path, dbc_path: Path, output_root: Path, config: dict)
     (output_root / "manifest.json").parent.mkdir(parents=True, exist_ok=True)
     (output_root / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
     return manifest
+
+
+def find_dbc(data_root: Path) -> Path:
+    """在数据根目录查找唯一DBC；多个文件时要求用户明确指定。"""
+    candidates = sorted(data_root.glob("*.dbc"))
+    if not candidates:
+        raise FileNotFoundError(f"数据目录中没有找到DBC文件：{data_root}")
+    if len(candidates) > 1:
+        names = ", ".join(path.name for path in candidates)
+        raise RuntimeError(f"数据目录中发现多个DBC，请只保留一个或使用--dbc指定：{names}")
+    return candidates[0]
+
+
+def main() -> None:
+    """批量解码入口，提供可读进度和异常摘要。"""
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--data-root", type=Path, help="DBC和BLF数据根目录")
+    parser.add_argument("--dbc", type=Path, help="DBC文件路径")
+    parser.add_argument("--output-root", type=Path, help="解码CSV输出目录")
+    args = parser.parse_args()
+    paths = load_runtime_paths()
+    project_config = load_project_config()
+    data_root = (args.data_root or paths["data_root"]).resolve()
+    dbc_path = (args.dbc or find_dbc(data_root)).resolve()
+    output_root = (args.output_root or paths["output_root"] / "解码CSV_单位修正").resolve()
+    blf_files = sorted(data_root.rglob("*.blf")) if data_root.exists() else []
+    print(f"数据目录：{data_root}")
+    print(f"DBC文件：{dbc_path}")
+    print(f"发现BLF：{len(blf_files)} 个")
+    if not blf_files:
+        raise FileNotFoundError(f"数据目录中没有找到BLF文件：{data_root}")
+    manifest = decode_all(data_root, dbc_path, output_root, {"signals": project_config["signals"]})
+    failed = [item for item in manifest if not item.get("available_columns") or item.get("rows", 0) == 0]
+    print(f"解码完成：成功 {len(manifest) - len(failed)} 个，异常 {len(failed)} 个")
+    print(f"输出目录：{output_root}")
+    print(f"清单文件：{output_root / 'manifest.json'}")
+    for item in failed:
+        print(f"异常：{item['source']}，rows={item.get('rows', 0)}")
+
+
+if __name__ == "__main__":
+    main()
