@@ -21,7 +21,7 @@ from audit_coasting_can_control import (
     window_values,
 )
 from config_loader import load_project_config
-from decode_blf import load_dependencies
+from decode_blf import decode_all, find_dbc, load_dependencies
 from runtime_paths import PROJECT_ROOT, load_runtime_paths
 
 
@@ -321,6 +321,30 @@ def build_admission_batch(batch_id: str | None = None, copy_files: bool = True) 
     reviews = read_json(REVIEWS_PATH, {"records": {}})
     database = load_admission_database(paths["data_root"])
     decoded_root = paths["output_root"] / "解码CSV_单位修正"
+    # 先确认已经存在解码结果；如果原始BLF和DBC都在，则由准入入口自动完成首次解码。
+    enabled_roles = [role for role, condition in registry["conditions"].items() if condition.get("enabled")]
+    decoded_count = sum(
+        len(list((decoded_root / Path(registry["conditions"][role]["source_subdirectory"])).glob("*.csv")))
+        for role in enabled_roles
+    )
+    if decoded_count == 0:
+        blf_files = sorted(paths["data_root"].rglob("*.blf")) if paths["data_root"].exists() else []
+        if not blf_files:
+            raise RuntimeError(
+                f"未找到BLF实车数据：{paths['data_root']}。请将BLF文件放入该目录，"
+                "或修改 config/runtime.local.json 的 data_root。"
+            )
+        try:
+            dbc_path = find_dbc(paths["data_root"])
+            decode_all(paths["data_root"], dbc_path, decoded_root, {"signals": project_config["signals"]})
+        except Exception as error:
+            raise RuntimeError(f"自动解码实车数据失败：{error}") from error
+        decoded_count = sum(
+            len(list((decoded_root / Path(registry["conditions"][role]["source_subdirectory"])).glob("*.csv")))
+            for role in enabled_roles
+        )
+        if decoded_count == 0:
+            raise RuntimeError(f"BLF已读取但没有生成有效CSV：{decoded_root}。请检查DBC与BLF是否匹配。")
     batch = batch_id or datetime.now().strftime("batch_%Y%m%d_%H%M%S")
     output = paths["output_root"] / "数据准入" / batch
     if output.exists():

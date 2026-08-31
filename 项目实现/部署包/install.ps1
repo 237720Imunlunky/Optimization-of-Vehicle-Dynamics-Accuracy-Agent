@@ -36,6 +36,25 @@ function Find-CarSimRoot {
     if ($ExplicitRoot) { return [System.IO.Path]::GetFullPath($ExplicitRoot) }
     if ($env:CARSIM_ROOT) { return [System.IO.Path]::GetFullPath($env:CARSIM_ROOT) }
     $candidates = @()
+    # 优先读取Windows卸载注册表，兼容用户自定义安装盘符和目录。
+    foreach ($registryPath in @(
+        "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*",
+        "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*"
+    )) {
+        try {
+            $items = Get-ItemProperty -Path $registryPath -ErrorAction SilentlyContinue
+            foreach ($item in $items) {
+                if ($item.DisplayName -and $item.DisplayName -match "CarSim" -and $item.InstallLocation) {
+                    $candidates += [string]$item.InstallLocation
+                }
+            }
+        } catch { }
+    }
+    # 若CarSim求解器已经启动，直接读取其可执行文件位置。
+    try {
+        $runningSolver = Get-Process -Name "CarSim_64" -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty Path
+        if ($runningSolver) { $candidates += (Split-Path -Parent $runningSolver) }
+    } catch { }
     foreach ($drive in @("C", "D", "E", "F")) {
         $candidates += "$drive`:\Carsim\Carsim2023\Carsim2023.2\install"
         $candidates += "$drive`:\CarSim\CarSim2023.2\install"

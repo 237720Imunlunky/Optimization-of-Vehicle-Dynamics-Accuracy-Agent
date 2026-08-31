@@ -703,7 +703,8 @@ class JobManager:
                 if not admission["ready_for_optimization"]:
                     raise RuntimeError("实车数据准入未就绪，请先完成数据解码和准入")
                 baseline_output = RUNTIME_PATHS["output_root"] / "正式联合基线" / "当前配置基线"
-                baseline_runtime = RUNTIME_PATHS["runtime_root"] / "formal_longitudinal" / "当前配置基线"
+                # CarSim 的 DATADIR 必须使用纯 ASCII 路径；中文目录仅用于结果展示归档。
+                baseline_runtime = RUNTIME_PATHS["runtime_root"] / "formal_longitudinal" / "current_baseline"
                 self._run_command([
                     sys.executable, "run_formal_longitudinal_acceptance.py",
                     "--template", str(RUNTIME_PATHS["model_template_path"]),

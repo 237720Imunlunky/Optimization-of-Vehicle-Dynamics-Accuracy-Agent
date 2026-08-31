@@ -23,7 +23,9 @@ from run_parameter_sensitivity import PROJECT_ROOT, convert_result, run_solver
 DEFAULT_TEMPLATE = load_runtime_paths()["model_template_path"]
 DEFAULT_TRUTH_ROOT = PROJECT_ROOT / "输出" / "解码CSV_单位修正"
 DEFAULT_OUTPUT = PROJECT_ROOT / "输出" / "正式联合基线" / "当前配置基线"
-DEFAULT_RUNTIME = load_runtime_paths()["runtime_root"] / "formal_longitudinal" / "当前配置基线"
+# CarSim 求解器对 DATADIR 的路径编码较严格，运行目录必须保持纯 ASCII。
+# 中文目录仅用于结果归档（DEFAULT_OUTPUT），不参与 CarSim 求解。
+DEFAULT_RUNTIME = load_runtime_paths()["runtime_root"] / "formal_longitudinal" / "current_baseline"
 RR_C_BASELINE = 0.0065
 TRACE_STEP_S = 0.02
 EVIDENCE_FILES = (
@@ -39,7 +41,8 @@ def clean_current_baseline_dirs(output: Path, runtime: Path) -> None:
     for target, parent in ((output.resolve(), project_output), (runtime.resolve(), runtime_root)):
         if not target.exists():
             continue
-        if target.name != "当前配置基线" or parent not in target.parents:
+        expected_name = "当前配置基线" if target == output.resolve() else "current_baseline"
+        if target.name != expected_name or parent not in target.parents:
             raise RuntimeError(f"自动清理目标不安全，已停止：{target}")
         shutil.rmtree(target)
 
