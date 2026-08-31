@@ -57,13 +57,14 @@ function switchView(view) {
 
 function updateStatus(api, system) {
   const apiReady = Boolean(api.configured);
+  const carsim = system.carsim || {};
   const carsimReady = Boolean(system.carsim_ready);
   setText("side-api", apiReady ? "已配置" : "待配置");
-  setText("side-carsim", carsimReady ? "已连接" : "未找到");
+  setText("side-carsim", carsim.label || (carsimReady ? "文件就绪" : "未找到"));
   document.getElementById("side-api-dot").className = `status-dot ${apiReady ? "ready" : "warn"}`;
   document.getElementById("side-carsim-dot").className = `status-dot ${carsimReady ? "ready" : "warn"}`;
   setText("control-api-status", apiReady ? `${api.model} · 已配置` : "未配置真实API");
-  setText("control-carsim-status", carsimReady ? "求解器可用" : "未找到求解器");
+  setText("control-carsim-status", carsim.label || (carsimReady ? "文件就绪，许可证待验证" : "未找到求解器"));
   document.getElementById("check-api-icon").className = `check-icon ${apiReady ? "ready" : "warn"}`;
   document.getElementById("check-carsim-icon").className = `check-icon ${carsimReady ? "ready" : "warn"}`;
   const configState = document.getElementById("config-state");
@@ -378,6 +379,18 @@ function updateRunButton() {
   const carsimReady = Boolean(state.dashboard && state.dashboard.system.carsim_ready);
   const active = ["running", "pausing", "paused", "stopping"].includes(state.job?.status);
   button.disabled = active || (mode === "full_iteration" && (!apiReady || !configReady || !admissionReady || !carsimReady));
+  const baselineButton = document.getElementById("generate-baseline-button");
+  if (baselineButton) baselineButton.disabled = active || !(state.dashboard && state.dashboard.system.carsim?.solver && state.dashboard.system.carsim?.dll && state.dashboard.system.carsim?.template && admissionReady);
+}
+
+async function generateFormalBaseline() {
+  if (!window.confirm("将使用当前准入数据调用CarSim，生成本车正式基线。请确认CarSim License Manager已启动。")) return;
+  try {
+    await requestJson("/api/jobs/start", { method: "POST", body: JSON.stringify({ mode: "formal_baseline" }) });
+    showToast("正式基线生成任务已启动");
+    state.lastJobStatus = "running";
+    pollJob();
+  } catch (error) { showToast(error.message, true); }
 }
 
 function updateJobControls(job) {
@@ -635,6 +648,7 @@ function bindInteractions() {
   document.querySelectorAll('input[name="run-mode"]').forEach((input) => input.addEventListener("change", updateRunButton));
   document.querySelectorAll('input[name="memory-mode"]').forEach((input) => input.addEventListener("change", updateRunButton));
   document.getElementById("start-job-button").addEventListener("click", startJob);
+  document.getElementById("generate-baseline-button").addEventListener("click", generateFormalBaseline);
   document.getElementById("pause-job-button").addEventListener("click", togglePauseJob);
   document.getElementById("stop-job-button").addEventListener("click", stopJob);
   document.getElementById("open-config-button").addEventListener("click", openConfig);

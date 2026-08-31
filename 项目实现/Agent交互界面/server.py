@@ -213,6 +213,22 @@ def full_optimization_preflight() -> None:
         raise RuntimeError("完整优化环境未就绪：" + "；".join(missing))
 
 
+def carsim_status() -> dict[str, Any]:
+    """返回CarSim文件和最近一次真实求解状态，许可证未求解前不虚报可用。"""
+    solver = RUNTIME_PATHS["carsim_solver"].exists()
+    dll = RUNTIME_PATHS["carsim_dll"].exists()
+    template = RUNTIME_PATHS["model_template_path"].exists()
+    if not solver or not dll:
+        level, label = "missing", "未找到CarSim求解器"
+    elif not template:
+        level, label = "template_missing", "等待车辆模型模板"
+    else:
+        level, label = "license_unknown", "文件就绪，许可证待验证"
+    return {"level": level, "label": label, "solver": solver, "dll": dll, "template": template,
+            "root": str(RUNTIME_PATHS["carsim_root"]), "formal_result": str(RUNTIME_PATHS["formal_result_path"]),
+            "demo_baseline": bool(RUNTIME_PATHS["formal_result_is_demo"])}
+
+
 def degrade_memory_after_failures(state: dict[str, Any], failure_count: int, threshold: int) -> bool:
     """连续失败达到阈值时仅保留本任务近期经验，停止继续注入更旧跨任务经验。"""
     if failure_count < threshold:
@@ -471,6 +487,7 @@ def dashboard_payload() -> dict[str, Any]:
         "api": api_config_status(),
         "system": {
             "carsim_ready": CARSIM_SOLVER.exists(),
+            "carsim": carsim_status(),
             "demo_mode": bool(RUNTIME_PATHS["formal_result_is_demo"]),
             "python_version": sys.version.split()[0],
             "state_path": str(state_path) if state_path is not None else None,
@@ -675,7 +692,39 @@ class JobManager:
             formal = load_formal_result()
             state_path, start_state = load_start_state(formal, project_config, agent_config, memory_mode)
             env = prepare_subprocess_environment(os.environ)
-            if mode == "dry_run":
+            if mode == "formal_baseline":
+                self.update_progress(phase="baseline", phase_label="生成本车正式基线", max_rounds=1, current_round=1)
+                self.append_log("开始检查CarSim、车辆模板和准入数据")
+                if not RUNTIME_PATHS["carsim_solver"].exists() or not RUNTIME_PATHS["carsim_dll"].exists():
+                    raise RuntimeError("CarSim求解器或动态库不存在，请检查CarSim安装路径")
+                if not RUNTIME_PATHS["model_template_path"].exists():
+                    raise RuntimeError(f"缺少车辆模型模板：{RUNTIME_PATHS['model_template_path']}")
+                admission = admission_payload()
+                if not admission["ready_for_optimization"]:
+                    raise RuntimeError("实车数据准入未就绪，请先完成数据解码和准入")
+                baseline_output = RUNTIME_PATHS["output_root"] / "正式联合基线" / "当前配置基线"
+                baseline_runtime = RUNTIME_PATHS["runtime_root"] / "formal_longitudinal" / "当前配置基线"
+                self._run_command([
+                    sys.executable, "run_formal_longitudinal_acceptance.py",
+                    "--template", str(RUNTIME_PATHS["model_template_path"]),
+                    "--truth-root", str(RUNTIME_PATHS["output_root"] / "解码CSV_单位修正"),
+                    "--output", str(baseline_output), "--runtime", str(baseline_runtime),
+                ], env)
+                baseline_file = baseline_output / "formal_acceptance.json"
+                if not baseline_file.exists():
+                    raise RuntimeError("CarSim运行结束但未生成formal_acceptance.json")
+                local_config = RUNTIME_PATHS["project_root"] / "config" / "runtime.local.json"
+                config = json.loads(local_config.read_text(encoding="utf-8-sig")) if local_config.exists() else {}
+                config["formal_result_path"] = str(baseline_file).replace("\\", "/")
+                local_config.write_text(json.dumps(config, ensure_ascii=False, indent=2), encoding="utf-8")
+                # 当前服务立即切换到新基线，刷新页面无需重启Agent。
+                RUNTIME_PATHS["formal_result_path"] = baseline_file
+                RUNTIME_PATHS["formal_result_is_demo"] = False
+                globals()["FORMAL_RESULT"] = baseline_file
+                self.append_log(f"本车正式基线已生成：{baseline_file}")
+                result = {"formal_result": str(baseline_file), "carsim": carsim_status()}
+                self.update_progress(phase="completed", phase_label="正式基线生成完成", candidate_completed=1)
+            elif mode == "dry_run":
                 self.update_progress(phase="proposal", phase_label="生成候选", max_rounds=0)
                 proposal = OUTPUT_ROOT / f"ui_{timestamp}_dry_run"
                 self.append_log("开始生成参数候选（干运行，不进入CarSim）")
@@ -965,8 +1014,8 @@ class AgentRequestHandler(BaseHTTPRequestHandler):
             if path == "/api/jobs/start":
                 body = self.parse_body()
                 mode = body.get("mode")
-                if mode not in {"dry_run", "full_iteration"}:
-                    self.send_json({"error": "mode必须为dry_run或full_iteration"}, HTTPStatus.BAD_REQUEST)
+                if mode not in {"dry_run", "full_iteration", "formal_baseline"}:
+                    self.send_json({"error": "mode必须为dry_run、formal_baseline或full_iteration"}, HTTPStatus.BAD_REQUEST)
                     return
                 memory_mode = body.get("memory_mode", "inherit")
                 if memory_mode not in {"inherit", "fresh"}:
