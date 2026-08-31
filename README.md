@@ -15,9 +15,9 @@
 
 1. 下载整个 GitHub 仓库 ZIP 并解压，不能只下载 `部署包` 文件夹。
 2. 安装 Windows 10/11 x64 和 Python 3.14 x64。
-3. 双击 `项目实现/部署包/install_agent.cmd`。
-4. 双击 `项目实现/部署包/verify_installation.cmd`。
-5. 双击 `项目实现/部署包/start_agent.cmd`，打开 `http://127.0.0.1:8765`。
+3. 双击根目录 `1_安装Agent.cmd`。
+4. 双击根目录 `2_验收Agent.cmd`。
+5. 双击根目录 `3_启动Agent.cmd`。服务就绪后会自动打开浏览器。
 
 首次安装没有 CarSim、DBC 或 BLF 也可以通过演示和干运行验收。完整闭环还需要用户自行准备合法授权的
 CarSim 2023.2、车辆模板、DBC/BLF、本车正式基线和 OpenAI 兼容模型 API。
