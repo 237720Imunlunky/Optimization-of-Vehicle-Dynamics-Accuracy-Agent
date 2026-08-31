@@ -95,6 +95,8 @@ Assert-ExternalCommandSucceeded -Step "安装Python依赖"
 $detectedCarSim = Find-CarSimRoot -ExplicitRoot $CarSimRoot
 $carSimAvailable = $detectedCarSim -and (Test-Path -LiteralPath (Join-Path $detectedCarSim "Programs\VS_SolverWrapper_CLI_64.exe"))
 $configuredCarSim = if ($detectedCarSim) { $detectedCarSim } else { "C:/path/to/CarSim2023.2/install" }
+$localBaseline = Join-Path $projectRoot "local_assets\formal_baseline\formal_acceptance.json"
+$formalResult = if (Test-Path -LiteralPath $localBaseline) { "local_assets/formal_baseline/formal_acceptance.json" } else { "demo_assets/formal_acceptance.demo.json" }
 $localConfig = Join-Path $projectRoot "config\runtime.local.json"
 if (-not (Test-Path -LiteralPath $localConfig)) {
     $configuration = [ordered]@{
@@ -105,7 +107,7 @@ if (-not (Test-Path -LiteralPath $localConfig)) {
         converter_path = "tools/convert_carsim_vsb.py"
         blf_dependencies = "tools"
         model_template_path = "local_assets/vehicle_template/Run_all.par"
-        formal_result_path = "demo_assets/formal_acceptance.demo.json"
+        formal_result_path = $formalResult
         install_root = ($resolvedInstall -replace '\\', '/')
     }
     $configuration | ConvertTo-Json | Set-Content -LiteralPath $localConfig -Encoding utf8

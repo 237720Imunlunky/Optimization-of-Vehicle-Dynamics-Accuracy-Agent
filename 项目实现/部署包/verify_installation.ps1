@@ -28,6 +28,10 @@ $healthPath = Join-Path $projectRoot "输出\部署体检\当前机器\health_ch
 $healthText = [System.IO.File]::ReadAllText($healthPath, [System.Text.Encoding]::UTF8)
 $health = $healthText | ConvertFrom-Json
 
+if ($health.active_level -eq "demo_and_dry_run") {
+    Write-Host "当前为演示验收：正式基线、实车数据或CarSim未就绪；干运行仍应可以通过。"
+}
+
 $dryOutput = Join-Path $output "dry_run"
 Push-Location $projectRoot
 try {

@@ -73,7 +73,7 @@ $env:CARSIM_ROOT="D:\Engineering\CarSim2023.2\install"
 2. 将本车 `Run_all.par` 放入 `项目实现/local_assets/vehicle_template/`。
 3. 将 DBC/BLF 放入 `项目实现/local_assets/data/`。
 4. 运行解码、数据准入和正式基线计算。
-5. 将正式基线配置为 `local_assets/formal_baseline/formal_acceptance.json`。
+5. 将正式基线配置为 `local_assets/formal_baseline/formal_acceptance.json`；没有正式基线时安装器自动使用演示基线，验收仍可完成。
 6. 填写 `Agent交互界面/config/llm_api.local.json`。
 7. 重新运行部署验收，确认级别变为 `full_optimization`。
 
