@@ -21,15 +21,12 @@ function Assert-ExternalCommandSucceeded {
 function Get-PythonVersion {
     param([string]$Command)
     if (-not (Get-Command $Command -ErrorAction SilentlyContinue)) {
-        throw "未找到Python命令：$Command。请安装Python 3.10或更高版本的64位Python并加入PATH。"
+        throw "未找到Python命令：$Command。请安装Python 3.14 x64并加入PATH。"
     }
     $details = & $Command -c "import platform; print(platform.python_version()); print(platform.architecture()[0])"
     Assert-ExternalCommandSucceeded -Step "读取Python版本"
-    $versionParts = $details[0].Split('.')
-    $major = [int]$versionParts[0]
-    $minor = [int]$versionParts[1]
-    if ($details.Count -lt 2 -or $major -lt 3 -or ($major -eq 3 -and $minor -lt 10) -or $details[1] -ne "64bit") {
-        throw "需要Python 3.10或更高版本的64位Python，当前为Python $($details[0]) $($details[1])。"
+    if ($details.Count -lt 2 -or -not $details[0].StartsWith("3.14") -or $details[1] -ne "64bit") {
+        throw "需要Python 3.14 x64，当前为Python $($details[0]) $($details[1])。"
     }
     return $details
 }
