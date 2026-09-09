@@ -24,7 +24,7 @@ powershell -ExecutionPolicy Bypass -File ".\install.ps1" `
 
 ## 分级环境
 
-- 演示和干运行：Windows 10/11 x64、Python 3.14 x64、现代浏览器；
+- 演示和干运行：Windows 10/11 x64、Python 3.10+ x64、现代浏览器；
 - 数据工作流：额外需要用户自己的 DBC/BLF；
 - 完整优化：额外需要合法授权 CarSim 2023.2、车辆模板、本车正式基线和 OpenAI 兼容 API。
 
