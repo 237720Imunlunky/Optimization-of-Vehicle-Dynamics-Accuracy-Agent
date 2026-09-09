@@ -131,9 +131,16 @@ if (-not (Test-Path -LiteralPath $localConfig)) {
     }
     $configuration | ConvertTo-Json | Set-Content -LiteralPath $localConfig -Encoding utf8
 } else {
-    # 已存在的旧配置也要校正：正式基线缺失时不能继续指向不存在的local_assets文件。
+    # 已存在的配置也要完整重写本机路径，支持把已安装目录迁移到新电脑或新解压位置。
     $configText = [System.IO.File]::ReadAllText($localConfig, [System.Text.Encoding]::UTF8)
     $existing = $configText | ConvertFrom-Json
+    $existing.carsim_root = ($configuredCarSim -replace '\\', '/')
+    $existing.runtime_root = ($resolvedRuntime -replace '\\', '/')
+    $existing.data_root = "local_assets/data"
+    $existing.output_root = "输出"
+    $existing.converter_path = "tools/convert_carsim_vsb.py"
+    $existing.blf_dependencies = "tools"
+    $existing.model_template_path = "local_assets/vehicle_template/Run_all.par"
     $existing.formal_result_path = if (Test-Path -LiteralPath $localBaseline) {
         "local_assets/formal_baseline/formal_acceptance.json"
     } else {
